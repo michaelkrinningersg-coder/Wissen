@@ -355,6 +355,15 @@ button {
   flex-shrink: 0;
 }
 
+.building-thumb {
+  width: 96px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
 .building-row .info {
   flex: 1;
   min-width: 0;

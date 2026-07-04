@@ -15,6 +15,8 @@ interface RawBuilding {
   /** Reine Klick-Gebäude (z.B. Höhlenzeichnungen) geben 0 Wissen/Sek., dafür
    * einen festen Wissen/Klick-Bonus pro Einheit. */
   clickBonusPerUnit?: number;
+  /** Eigene Button-Grafik statt Emoji-Icon (public/buildings/<id>.jpg). */
+  imageUrl?: string;
 }
 
 // Feste Tier-Reihenfolge pro Epoche (Abschnitt 7), wird für den Ketten-Bonus gebraucht.
@@ -26,13 +28,26 @@ const RAW_BUILDINGS: RawBuilding[] = [
     icon: "🎨",
     epoch: 1,
     clickBonusPerUnit: HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
+    imageUrl: "/buildings/e1_hoehlenzeichnungen.jpg",
   },
-  { id: "e1_erzaehlungen", name: "Erzählungen", icon: "🔥", epoch: 1 },
-  { id: "e1_buecher", name: "Bücher", icon: "📖", epoch: 1 },
+  {
+    id: "e1_erzaehlungen",
+    name: "Erzählungen",
+    icon: "🔥",
+    epoch: 1,
+    imageUrl: "/buildings/e1_erzaehlungen.jpg",
+  },
+  { id: "e1_buecher", name: "Bücher", icon: "📖", epoch: 1, imageUrl: "/buildings/e1_buecher.jpg" },
   { id: "e1_krippe", name: "Krippe", icon: "🍼", epoch: 1 },
   { id: "e1_kindergarten", name: "Kindergarten", icon: "🧸", epoch: 1 },
-  { id: "e1_grundschule", name: "Grundschule", icon: "✏️", epoch: 1 },
-  { id: "e1_gymnasium", name: "Gymnasium", icon: "📐", epoch: 1 },
+  {
+    id: "e1_grundschule",
+    name: "Grundschule",
+    icon: "✏️",
+    epoch: 1,
+    imageUrl: "/buildings/e1_grundschule.jpg",
+  },
+  { id: "e1_gymnasium", name: "Gymnasium", icon: "📐", epoch: 1, imageUrl: "/buildings/e1_gymnasium.jpg" },
   { id: "e1_studenten", name: "Studenten", icon: "🧑‍🎓", epoch: 1 },
   { id: "e1_bibliotheken", name: "Bibliotheken", icon: "📚", epoch: 1 },
   { id: "e1_vorlesungen", name: "Vorlesungen", icon: "🗣️", epoch: 1 },
@@ -40,10 +55,8 @@ const RAW_BUILDINGS: RawBuilding[] = [
   { id: "e1_philosophenzirkel", name: "Philosophenzirkel", icon: "🏛️", epoch: 1 },
 
   // Epoche 2 – Industrielle Erkenntnis
-  // TODO: e2_schulen wird später entfernt (redundant seit Krippe/Kindergarten/
-  // Grundschule/Gymnasium in Epoche 1) — Karte "Dmitri Mendeleev" müsste dann
-  // umgehängt werden (card_mendeleev in config/cards.ts).
-  { id: "e2_schulen", name: "Schulen", icon: "🏫", epoch: 2 },
+  // e2_schulen entfernt (redundant seit Krippe/Kindergarten/Grundschule/
+  // Gymnasium in Epoche 1) — card_mendeleev wurde auf e1_gymnasium umgehängt.
   { id: "e2_universitaeten", name: "Universitäten", icon: "🎓", epoch: 2 },
   { id: "e2_labore", name: "Labore", icon: "🔬", epoch: 2 },
   { id: "e2_bildungsministerium", name: "Bildungsministerium", icon: "🏢", epoch: 2 },
@@ -99,6 +112,7 @@ export const BUILDINGS: BuildingDef[] = RAW_BUILDINGS.map((raw, globalIndex) => 
     baseCost,
     baseProduction,
     clickBonusPerUnit: raw.clickBonusPerUnit !== undefined ? new Decimal(raw.clickBonusPerUnit) : undefined,
+    imageUrl: raw.imageUrl,
   };
 });
 

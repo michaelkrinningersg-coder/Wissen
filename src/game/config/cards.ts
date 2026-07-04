@@ -22,7 +22,7 @@ export const CARDS: CardDef[] = [
 
   // Industrielle Erkenntnis
   { id: "card_darwin", name: "Charles Darwin", era: "Industrielle Erkenntnis", icon: "🐢", rarity: "epic", linkedBuildingId: "e2_forschungsnetzwerke", spawnThreshold: 75, baseBoostPercent: 0.02 },
-  { id: "card_mendeleev", name: "Dmitri Mendeleev", era: "Industrielle Erkenntnis", icon: "🧫", rarity: "rare", linkedBuildingId: "e2_schulen", spawnThreshold: 75, baseBoostPercent: 0.01 },
+  { id: "card_mendeleev", name: "Dmitri Mendeleev", era: "Industrielle Erkenntnis", icon: "🧫", rarity: "rare", linkedBuildingId: "e1_gymnasium", spawnThreshold: 75, baseBoostPercent: 0.01 },
   { id: "card_curie", name: "Marie Curie", era: "Industrielle Erkenntnis", icon: "☢️", rarity: "epic", linkedBuildingId: "e2_experimentierzentren", spawnThreshold: 75, baseBoostPercent: 0.02 },
   { id: "card_watt", name: "James Watt", era: "Industrielle Erkenntnis", icon: "⚙️", rarity: "common", linkedBuildingId: "e2_bildungsministerium", spawnThreshold: 75, baseBoostPercent: 0.005 },
 

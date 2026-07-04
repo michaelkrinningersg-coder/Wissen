@@ -11,6 +11,7 @@ export interface BuildingDef {
   baseCost: Decimal;
   baseProduction: Decimal; // Wissen/Sek. pro Einheit (0 bei reinen Klick-Gebäuden)
   clickBonusPerUnit?: Decimal; // zusätzlicher, fester Wissen/Klick-Bonus pro Einheit (z.B. Höhlenzeichnungen)
+  imageUrl?: string; // eigene Button-Grafik statt Emoji-Icon, falls vorhanden
 }
 
 export interface ComboBuildingDef {

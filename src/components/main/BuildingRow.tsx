@@ -22,9 +22,13 @@ export function BuildingRow({ def, player, buyAmount, onBuy }: BuildingRowProps)
 
   return (
     <button type="button" className="building-row" disabled={!canAfford} onClick={() => onBuy(def.id)}>
-      <span className="icon" aria-hidden="true">
-        {def.icon}
-      </span>
+      {def.imageUrl ? (
+        <img className="building-thumb" src={def.imageUrl} alt="" />
+      ) : (
+        <span className="icon" aria-hidden="true">
+          {def.icon}
+        </span>
+      )}
       <span className="info">
         <span className="name-row">
           <span>
