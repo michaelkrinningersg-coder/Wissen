@@ -181,7 +181,7 @@ button {
    Spalte zurück. */
 .main-layout {
   display: grid;
-  grid-template-columns: 220px minmax(420px, 1fr) minmax(320px, 420px);
+  grid-template-columns: 220px minmax(420px, 1fr) minmax(300px, 400px);
   gap: 1.25rem;
   align-items: start;
 }
@@ -327,6 +327,9 @@ button {
   background-size: cover;
   background-position: center;
   padding: 0;
+  aspect-ratio: 2 / 1;
+  min-height: 0;
+  height: auto;
 }
 
 .building-row .icon {
