@@ -12,13 +12,18 @@ export const OFFLINE_CAP_HOURS = 12;
 // Kostenformel: Kosten(n) = Basispreis * COST_GROWTH^n
 export const COST_GROWTH = 1.15;
 
-// Content-Kurve: baseCost/baseProduction wachsen mit BUILDING_TIER_GROWTH^globalTierIndex
-export const BUILDING_TIER_GROWTH = 3.4;
+// Content-Kurve: baseCost/baseProduction wachsen mit BUILDING_TIER_GROWTH^globalTierIndex.
+// Alle Wissensquellen sind ab Epoche 1 gleichzeitig sichtbar/kaufbar — die
+// Freischaltung passiert rein wirtschaftlich über diese (deutlich steilere)
+// Preiskurve, nicht mehr über eine UI-Sperre je Epoche.
+export const BUILDING_TIER_GROWTH = 10;
 export const BUILDING_BASE_COST_START = 10;
-export const BUILDING_PRODUCTION_TO_COST_RATIO = 0.1;
+// Einkommen (Klick + automatisch) wurde auf 1/20 des ursprünglichen Standes
+// abgesenkt, die Kosten blieben unverändert (BUILDING_BASE_COST_START/-GROWTH).
+export const BUILDING_PRODUCTION_TO_COST_RATIO = 0.0005;
 
-// Klick-System
-export const CLICK_BASE_VALUE = 1;
+// Klick-System — Basiswert auf 1/20 des ursprünglichen Standes abgesenkt.
+export const CLICK_BASE_VALUE = 0.05;
 export const CLICK_PHASE2_UNLOCK_UPGRADE_ID = "click_phase2_wps_percent";
 export const CLICK_PHASE2_PERCENT_OF_WPS = 0.01; // 1% der WPS pro Klick, sobald freigeschaltet
 
@@ -26,6 +31,11 @@ export const CLICK_PHASE2_PERCENT_OF_WPS = 0.01; // 1% der WPS pro Klick, sobald
 export const EPOCH_BONUS_BASE = 5;
 export const PRESTIGE_CORE_DIVISOR = 1e6;
 export const MAX_EPOCH_TIER = 5;
+// Prestige ist erst möglich, sobald in diesem Run mindestens so viel Wissen
+// generiert wurde — wächst pro EpochenLevel stark, damit das Erreichen der
+// nächsten Epoche bewusst schwer bleibt.
+export const PRESTIGE_MIN_KNOWLEDGE_BASE = 1e9;
+export const PRESTIGE_MIN_KNOWLEDGE_GROWTH = 1000;
 
 // Synergie & Ketten
 export const SYNERGY_FACTOR = 0.05; // 5% * ln(1+Partneranzahl)
@@ -36,7 +46,7 @@ export const DIVERSITY_FACTOR = 0.02; // 2% pro unterschiedlichem Typ
 export const MASS_FACTOR = 0.01; // 1% * sqrt(GesamtAnzahl)
 
 // Kern-Shop Überschuss
-export const PASSIVE_CORE_BONUS_PER_CORE = 0.01; // +1% WPS pro ungenutztem Kern
+export const PASSIVE_CORE_BONUS_PER_CORE = 0.02; // +2% WPS pro ungenutztem Kern
 
 // Karten: Dropchance wird bei jedem Klick auf den Wissen-Button geprüft,
 // unabhängig je Wissensquelle (nicht je Epoche) — Basis 1:1.000.000 Klicks

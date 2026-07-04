@@ -166,6 +166,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
 
     prestige: () => {
       const { player } = get();
+      if (!formulas.canPrestige(player)) return;
       const oldTier = formulas.currentEpochNumber(player.epochenLevel);
       const cores = formulas.coresAwarded(player.knowledgeEarnedThisRun);
       const fullyPurchased = isCoreShopFullyPurchased(player.coreUpgrades);

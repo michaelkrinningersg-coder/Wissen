@@ -19,9 +19,11 @@ interface BuildingListProps {
   onBuy: (id: string) => void;
 }
 
+// Alle Wissensquellen aus allen Epochen sind von Anfang an sichtbar/kaufbar —
+// die Freischaltung passiert wirtschaftlich über die Preiskurve, nicht mehr
+// über eine UI-Sperre je Epoche.
 export function BuildingList({ player, buyAmount, onBuy }: BuildingListProps) {
-  const maxVisibleEpoch = Math.min(player.epochenLevel + 1, MAX_EPOCH_TIER);
-  const epochs = Array.from({ length: maxVisibleEpoch }, (_, i) => i + 1);
+  const epochs = Array.from({ length: MAX_EPOCH_TIER }, (_, i) => i + 1);
 
   return (
     <div className="building-list">

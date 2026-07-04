@@ -16,6 +16,7 @@ interface RawBuilding {
 // Feste Tier-Reihenfolge pro Epoche (Abschnitt 7), wird für den Ketten-Bonus gebraucht.
 const RAW_BUILDINGS: RawBuilding[] = [
   // Epoche 1 – Antike
+  { id: "e1_erzaehlungen", name: "Erzählungen", icon: "🔥", epoch: 1 },
   { id: "e1_buecher", name: "Bücher", icon: "📖", epoch: 1 },
   { id: "e1_studenten", name: "Studenten", icon: "🧑‍🎓", epoch: 1 },
   { id: "e1_bibliotheken", name: "Bibliotheken", icon: "📚", epoch: 1 },
@@ -56,8 +57,15 @@ const RAW_BUILDINGS: RawBuilding[] = [
   { id: "e5_realitaets_compiler", name: "Realitäts-Compiler", icon: "🧬", epoch: 5 },
 ];
 
+// tierIndex = Position INNERHALB der eigenen Epoche (nicht global), damit
+// Epochen mit abweichender Gebäudeanzahl (z.B. Epoche 1 mit Erzählungen als
+// zusätzlichem Einstiegsgebäude) korrekt für Ketten-/Synergie-Paarung bleiben.
+// baseCost/baseProduction folgen dagegen weiter dem GLOBALEN Index, damit die
+// Preiskurve über alle 31 Gebäude hinweg durchgehend exponentiell bleibt.
+const tierCounters = new Map<number, number>();
 export const BUILDINGS: BuildingDef[] = RAW_BUILDINGS.map((raw, globalIndex) => {
-  const tierIndex = globalIndex % 6;
+  const tierIndex = tierCounters.get(raw.epoch) ?? 0;
+  tierCounters.set(raw.epoch, tierIndex + 1);
   const baseCost = new Decimal(BUILDING_BASE_COST_START).times(
     Decimal.pow(BUILDING_TIER_GROWTH, globalIndex),
   );

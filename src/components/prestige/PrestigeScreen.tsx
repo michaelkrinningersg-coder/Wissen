@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { Player } from "../../game/types";
 import * as formulas from "../../game/formulas";
-import { formatDuration, formatKnowledge } from "../../game/format";
+import { formatDuration, formatKnowledge, formatPercent } from "../../game/format";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import { ProgressBar } from "../common/ProgressBar";
 import { CoreShopTree } from "./CoreShopTree";
+import { PASSIVE_CORE_BONUS_PER_CORE } from "../../game/config/constants";
 
 const EPOCH_NAMES: Record<number, string> = {
   1: "Antike",
@@ -29,6 +31,12 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
   const elapsed = player.playtimeSeconds - player.currentEpochStartedAt;
   const isLoop = player.epochenLevel >= 5;
 
+  const minKnowledge = formulas.prestigeMinKnowledge(player.epochenLevel);
+  const eligible = formulas.canPrestige(player);
+  const progress = player.knowledgeEarnedThisRun.div(minKnowledge).toNumber();
+  const firstCoreThreshold = formulas.firstCoreKnowledgeThreshold();
+  const hasFirstCore = player.totalCoresEarned.gt(0) || player.intelligenceCores.gt(0);
+
   return (
     <div>
       <div className="section-title">🔁 Epochen des Wissens</div>
@@ -42,6 +50,11 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
         <div className="text-dim">Zeit in dieser Epoche: {formatDuration(elapsed)}</div>
         <div className="text-dim">
           Prestige-Bonus aus Kern-Upgrades: ×{formatKnowledge(formulas.prestigeBonus(player))}
+        </div>
+        <div className="text-dim">
+          🌟 {hasFirstCore ? "Erster Kern erhalten bei" : "Erster Kern ab"}: {formatKnowledge(firstCoreThreshold)}{" "}
+          generiertem Wissen · Bonus je ungenutztem Kern: +{formatPercent(PASSIVE_CORE_BONUS_PER_CORE)} Wissen/Sek.
+          (sobald Kern-Shop komplett ausgebaut ist)
         </div>
       </div>
 
@@ -59,11 +72,22 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
           (Bonus ×{formatKnowledge(nextBonus)})
         </div>
         <div className="text-dim">Neue Kerne bei Reset: 🌟 {formatKnowledge(cores)}</div>
+
+        <div style={{ marginTop: "0.5rem" }}>
+          <div className="text-dim" style={{ marginBottom: "0.25rem" }}>
+            Benötigtes Wissen für Prestige: {formatKnowledge(player.knowledgeEarnedThisRun)} /{" "}
+            {formatKnowledge(minKnowledge)}
+          </div>
+          <ProgressBar fraction={progress} />
+        </div>
+
         <button
           type="button"
           className="button-primary"
           style={{ marginTop: "0.5rem" }}
+          disabled={!eligible}
           onClick={() => setConfirming(true)}
+          title={eligible ? undefined : "Noch nicht genug Wissen in dieser Epoche generiert"}
         >
           Jetzt zurücksetzen (Prestige)
         </button>

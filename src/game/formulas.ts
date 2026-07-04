@@ -20,6 +20,8 @@ import {
   MASS_FACTOR,
   MAX_EPOCH_TIER,
   PRESTIGE_CORE_DIVISOR,
+  PRESTIGE_MIN_KNOWLEDGE_BASE,
+  PRESTIGE_MIN_KNOWLEDGE_GROWTH,
   RARITY_TABLE,
   SYNERGY_FACTOR,
 } from "./config/constants";
@@ -146,6 +148,24 @@ export function currentEpochNumber(epochenLevel: number): number {
 
 export function epochenBonus(epochenLevel: number): Decimal {
   return Decimal.pow(EPOCH_BONUS_BASE, epochenLevel);
+}
+
+/** Mindestens benötigtes, in diesem Run generiertes Wissen, um überhaupt
+ * prestigen zu dürfen — wächst stark pro EpochenLevel (bewusst schwer). */
+export function prestigeMinKnowledge(epochenLevel: number): Decimal {
+  return new Decimal(PRESTIGE_MIN_KNOWLEDGE_BASE).times(
+    Decimal.pow(PRESTIGE_MIN_KNOWLEDGE_GROWTH, epochenLevel),
+  );
+}
+
+export function canPrestige(player: Player): boolean {
+  return player.knowledgeEarnedThisRun.gte(prestigeMinKnowledge(player.epochenLevel));
+}
+
+/** Ab wie viel generiertem Wissen der allererste Intelligenz-Kern abfällt:
+ * floor(sqrt(x / Divisor)) >= 1  <=>  x >= Divisor. */
+export function firstCoreKnowledgeThreshold(): Decimal {
+  return new Decimal(PRESTIGE_CORE_DIVISOR);
 }
 
 export function prestigeBonus(player: Player): Decimal {

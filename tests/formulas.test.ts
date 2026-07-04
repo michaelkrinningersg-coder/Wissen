@@ -7,14 +7,23 @@ import {
   buildingCost,
   buildingLocalMultiplier,
   buildingProduction,
+  canPrestige,
   cardGearMultiplier,
   coresAwarded,
   epochenBonus,
+  firstCoreKnowledgeThreshold,
   knowledgePerSecond,
   maxAffordable,
+  prestigeMinKnowledge,
 } from "../src/game/formulas";
 import { ACHIEVEMENTS_BY_ID } from "../src/game/config/achievements";
-import { CHAIN_FACTOR, SYNERGY_FACTOR } from "../src/game/config/constants";
+import {
+  CHAIN_FACTOR,
+  PRESTIGE_CORE_DIVISOR,
+  PRESTIGE_MIN_KNOWLEDGE_BASE,
+  PRESTIGE_MIN_KNOWLEDGE_GROWTH,
+  SYNERGY_FACTOR,
+} from "../src/game/config/constants";
 
 describe("buildingCost", () => {
   it("matches Kosten(n) = Basispreis * 1.15^n", () => {
@@ -70,14 +79,14 @@ describe("maxAffordable", () => {
 describe("Stacking-Regel: lokale Boni additiv, Kategorien multiplikativ", () => {
   it("combines synergy + chain additively for a single building", () => {
     const player = createInitialPlayer();
-    // e1_studenten (tierIndex 1) hat Synergie-Partner e1_buecher (tierIndex 0)
-    // und Ketten-Vorgänger ebenfalls e1_buecher.
-    player.buildings["e1_buecher"] = { owned: 100 };
-    player.buildings["e1_studenten"] = { owned: 1 };
+    // e1_buecher (tierIndex 1) hat Synergie-Partner UND Ketten-Vorgänger
+    // e1_erzaehlungen (tierIndex 0, das niederschwellige Einstiegsgebäude).
+    player.buildings["e1_erzaehlungen"] = { owned: 100 };
+    player.buildings["e1_buecher"] = { owned: 1 };
 
     const expectedSynergy = SYNERGY_FACTOR * Math.log(1 + 100);
     const expectedChain = 100 * CHAIN_FACTOR;
-    const multiplier = buildingLocalMultiplier("e1_studenten", player);
+    const multiplier = buildingLocalMultiplier("e1_buecher", player);
     expect(multiplier).toBeCloseTo(1 + expectedSynergy + expectedChain, 6);
   });
 
@@ -109,6 +118,32 @@ describe("coresAwarded", () => {
 
   it("never returns negative or NaN for 0 knowledge", () => {
     expect(coresAwarded(new Decimal(0)).toNumber()).toBe(0);
+  });
+});
+
+describe("firstCoreKnowledgeThreshold", () => {
+  it("equals PRESTIGE_CORE_DIVISOR (floor(sqrt(x/D)) >= 1 iff x >= D)", () => {
+    expect(firstCoreKnowledgeThreshold().toNumber()).toBe(PRESTIGE_CORE_DIVISOR);
+    expect(coresAwarded(firstCoreKnowledgeThreshold()).toNumber()).toBe(1);
+    expect(coresAwarded(firstCoreKnowledgeThreshold().minus(1)).toNumber()).toBe(0);
+  });
+});
+
+describe("prestigeMinKnowledge / canPrestige", () => {
+  it("grows by PRESTIGE_MIN_KNOWLEDGE_GROWTH per EpochenLevel, starting at the base", () => {
+    expect(prestigeMinKnowledge(0).toNumber()).toBeCloseTo(PRESTIGE_MIN_KNOWLEDGE_BASE, 0);
+    expect(prestigeMinKnowledge(1).toNumber()).toBeCloseTo(
+      PRESTIGE_MIN_KNOWLEDGE_BASE * PRESTIGE_MIN_KNOWLEDGE_GROWTH,
+      0,
+    );
+  });
+
+  it("blocks prestige below the threshold and allows it at/above", () => {
+    const player = createInitialPlayer();
+    player.knowledgeEarnedThisRun = prestigeMinKnowledge(0).minus(1);
+    expect(canPrestige(player)).toBe(false);
+    player.knowledgeEarnedThisRun = prestigeMinKnowledge(0);
+    expect(canPrestige(player)).toBe(true);
   });
 });
 
