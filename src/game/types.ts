@@ -7,9 +7,10 @@ export interface BuildingDef {
   name: string;
   icon: string;
   epoch: number; // 1-5
-  tierIndex: number; // 0-5, position within the epoch's chain order
+  tierIndex: number; // Position innerhalb der eigenen Epoche (für Ketten-/Synergie-Paarung)
   baseCost: Decimal;
-  baseProduction: Decimal;
+  baseProduction: Decimal; // Wissen/Sek. pro Einheit (0 bei reinen Klick-Gebäuden)
+  clickBonusPerUnit?: Decimal; // zusätzlicher, fester Wissen/Klick-Bonus pro Einheit (z.B. Höhlenzeichnungen)
 }
 
 export interface ComboBuildingDef {

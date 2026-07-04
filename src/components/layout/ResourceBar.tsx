@@ -1,6 +1,6 @@
 import type { Decimal } from "../../game/decimal";
 import type { Player } from "../../game/types";
-import { formatInt, formatKnowledge, formatPercent } from "../../game/format";
+import { formatInt, formatKnowledge, formatPercent, formatWissenProSekunde } from "../../game/format";
 import { isCoreShopFullyPurchased } from "../../game/config/coreUpgrades";
 import { PASSIVE_CORE_BONUS_PER_CORE } from "../../game/config/constants";
 
@@ -20,7 +20,7 @@ export function ResourceBar({ player, kps }: ResourceBarProps) {
       </div>
       <div className="resource-col">
         <div className="resource-label">⚡ Wissen/Sek.</div>
-        <div className="resource-value">{formatKnowledge(kps)}</div>
+        <div className="resource-value">{formatWissenProSekunde(kps)}</div>
       </div>
       <div className="resource-col">
         <div className="resource-label">🌟 Kerne</div>

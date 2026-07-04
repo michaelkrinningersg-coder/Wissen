@@ -1,5 +1,5 @@
 import type { BuildingDef, Player } from "../../game/types";
-import { formatInt, formatKnowledge, formatPercent } from "../../game/format";
+import { formatInt, formatKnowledge, formatPercent, formatWissenProSekunde } from "../../game/format";
 import * as formulas from "../../game/formulas";
 import type { BuyAmount } from "../../game/state/store";
 
@@ -18,6 +18,7 @@ export function BuildingRow({ def, player, buyAmount, onBuy }: BuildingRowProps)
   const canAfford = count > 0 && player.knowledge.gte(cost);
   const production = formulas.buildingProduction(def.id, player);
   const localBonus = formulas.buildingLocalMultiplier(def.id, player) - 1;
+  const clickBonusTotal = def.clickBonusPerUnit?.times(owned);
 
   return (
     <button type="button" className="building-row" disabled={!canAfford} onClick={() => onBuy(def.id)}>
@@ -32,7 +33,11 @@ export function BuildingRow({ def, player, buyAmount, onBuy }: BuildingRowProps)
           {localBonus > 0.001 && <span className="bonus-badge">+{formatPercent(localBonus)}</span>}
         </span>
         <span className="sub-row">
-          <span>{formatKnowledge(production)} Wissen/Sek.</span>
+          {clickBonusTotal ? (
+            <span>+{formatWissenProSekunde(clickBonusTotal)} Wissen/Klick</span>
+          ) : (
+            <span>{formatWissenProSekunde(production)} Wissen/Sek.</span>
+          )}
         </span>
       </span>
       <span className="cost-col">

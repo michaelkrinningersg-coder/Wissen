@@ -22,11 +22,11 @@ describe("game store", () => {
 
   it("buyBuilding deducts cost and increases owned count", () => {
     const { actions } = useGameStore.getState();
-    useGameStore.setState((s) => ({ player: { ...s.player, knowledge: s.player.knowledge.plus(1000) } }));
+    useGameStore.setState((s) => ({ player: { ...s.player, knowledge: s.player.knowledge.plus(100_000) } }));
     actions.buyBuilding("e1_buecher", 5);
     const { player } = useGameStore.getState();
     expect(player.buildings["e1_buecher"].owned).toBe(5);
-    expect(player.knowledge.toNumber()).toBeLessThan(1000);
+    expect(player.knowledge.toNumber()).toBeLessThan(100_000);
   });
 
   it("buyBuilding does nothing if unaffordable", () => {

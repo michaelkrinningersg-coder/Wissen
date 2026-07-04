@@ -5,7 +5,7 @@ import { BUILDINGS } from "../../game/config/buildings";
 import { CARDS } from "../../game/config/cards";
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID } from "../../game/config/achievements";
 import * as formulas from "../../game/formulas";
-import { formatDuration, formatInt, formatKnowledge } from "../../game/format";
+import { formatDuration, formatInt, formatKnowledge, formatWissenProSekunde } from "../../game/format";
 import { KpsHistoryChart } from "./KpsHistoryChart";
 import { SaveManagementPanel } from "./SaveManagementPanel";
 
@@ -57,9 +57,12 @@ export function StatsScreen({ player, onImport, onResetGame }: StatsScreenProps)
 
       <div className="stat-grid">
         <StatTile label="Lifetime-Wissen" value={formatKnowledge(player.lifetimeKnowledge)} />
-        <StatTile label="Aktuell Wissen/Sek." value={formatKnowledge(kps)} />
-        <StatTile label="Höchste Wissen/Sek. je erreicht" value={formatKnowledge(new Decimal(player.peakKps))} />
-        <StatTile label="Ø Wissen/Sek. (letzte Std.)" value={formatKnowledge(new Decimal(avgKpsLastHour))} />
+        <StatTile label="Aktuell Wissen/Sek." value={formatWissenProSekunde(kps)} />
+        <StatTile
+          label="Höchste Wissen/Sek. je erreicht"
+          value={formatWissenProSekunde(new Decimal(player.peakKps))}
+        />
+        <StatTile label="Ø Wissen/Sek. (letzte Std.)" value={formatWissenProSekunde(new Decimal(avgKpsLastHour))} />
         <StatTile label="Klicks gesamt" value={formatInt(player.totalClicks)} />
         <StatTile label="Höchste Klicks/Sek." value={player.peakClicksPerSecond.toFixed(1)} />
         <StatTile label="Spielzeit gesamt" value={formatDuration(player.playtimeSeconds)} />

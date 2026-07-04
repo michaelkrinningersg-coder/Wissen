@@ -1,9 +1,10 @@
-import { Decimal } from "../decimal";
+import { Decimal, ZERO } from "../decimal";
 import type { BuildingDef } from "../types";
 import {
   BUILDING_BASE_COST_START,
   BUILDING_PRODUCTION_TO_COST_RATIO,
   BUILDING_TIER_GROWTH,
+  HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
 } from "./constants";
 
 interface RawBuilding {
@@ -11,11 +12,21 @@ interface RawBuilding {
   name: string;
   icon: string;
   epoch: number;
+  /** Reine Klick-Gebäude (z.B. Höhlenzeichnungen) geben 0 Wissen/Sek., dafür
+   * einen festen Wissen/Klick-Bonus pro Einheit. */
+  clickBonusPerUnit?: number;
 }
 
 // Feste Tier-Reihenfolge pro Epoche (Abschnitt 7), wird für den Ketten-Bonus gebraucht.
 const RAW_BUILDINGS: RawBuilding[] = [
   // Epoche 1 – Antike
+  {
+    id: "e1_hoehlenzeichnungen",
+    name: "Höhlenzeichnungen",
+    icon: "🎨",
+    epoch: 1,
+    clickBonusPerUnit: HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
+  },
   { id: "e1_erzaehlungen", name: "Erzählungen", icon: "🔥", epoch: 1 },
   { id: "e1_buecher", name: "Bücher", icon: "📖", epoch: 1 },
   { id: "e1_studenten", name: "Studenten", icon: "🧑‍🎓", epoch: 1 },
@@ -69,7 +80,9 @@ export const BUILDINGS: BuildingDef[] = RAW_BUILDINGS.map((raw, globalIndex) => 
   const baseCost = new Decimal(BUILDING_BASE_COST_START).times(
     Decimal.pow(BUILDING_TIER_GROWTH, globalIndex),
   );
-  const baseProduction = baseCost.times(BUILDING_PRODUCTION_TO_COST_RATIO);
+  // Reine Klick-Gebäude (clickBonusPerUnit gesetzt) geben bewusst 0 Wissen/Sek.
+  const baseProduction =
+    raw.clickBonusPerUnit !== undefined ? ZERO : baseCost.times(BUILDING_PRODUCTION_TO_COST_RATIO);
   return {
     id: raw.id,
     name: raw.name,
@@ -78,6 +91,7 @@ export const BUILDINGS: BuildingDef[] = RAW_BUILDINGS.map((raw, globalIndex) => 
     tierIndex,
     baseCost,
     baseProduction,
+    clickBonusPerUnit: raw.clickBonusPerUnit !== undefined ? new Decimal(raw.clickBonusPerUnit) : undefined,
   };
 });
 

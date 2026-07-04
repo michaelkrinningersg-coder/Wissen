@@ -95,6 +95,7 @@ function App() {
             onClick={() => withRefresh(actions.click)}
             onBuy={(id, amount) => withRefresh(() => actions.buyBuilding(id, amount))}
             onUnlockCombo={(id) => withRefresh(() => actions.unlockComboBuilding(id))}
+            onPrestige={() => withRefresh(actions.prestige)}
           />
         )}
         {tab === "prestige" && (

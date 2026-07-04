@@ -65,16 +65,6 @@ export const CORE_UPGRADES: CoreUpgradeDef[] = [
     effectPercent: 0.25,
   },
   {
-    id: "click_phase2_wps_percent",
-    name: "KI-Verstärkter Klick",
-    description:
-      "Klick gibt zusätzlich einen Prozentsatz der aktuellen Wissen-pro-Sekunde-Rate (ab Epoche 3 nutzbar).",
-    icon: "🤝",
-    cost: new Decimal(50),
-    requires: ["core_click_2"],
-    category: "click",
-  },
-  {
     id: "core_efficiency_1",
     name: "Effiziente Gebäude I",
     description: "+5% Gebäude-Effizienz global.",

@@ -10,7 +10,7 @@ export const AUTOSAVE_INTERVAL_MS = 30_000;
 export const OFFLINE_CAP_HOURS = 12;
 
 // Kostenformel: Kosten(n) = Basispreis * COST_GROWTH^n
-export const COST_GROWTH = 1.15;
+export const COST_GROWTH = 1.2;
 
 // Content-Kurve: baseCost/baseProduction wachsen mit BUILDING_TIER_GROWTH^globalTierIndex.
 // Alle Wissensquellen sind ab Epoche 1 gleichzeitig sichtbar/kaufbar — die
@@ -22,10 +22,11 @@ export const BUILDING_BASE_COST_START = 10;
 // abgesenkt, die Kosten blieben unverändert (BUILDING_BASE_COST_START/-GROWTH).
 export const BUILDING_PRODUCTION_TO_COST_RATIO = 0.0005;
 
-// Klick-System — Basiswert auf 1/20 des ursprünglichen Standes abgesenkt.
-export const CLICK_BASE_VALUE = 0.05;
-export const CLICK_PHASE2_UNLOCK_UPGRADE_ID = "click_phase2_wps_percent";
-export const CLICK_PHASE2_PERCENT_OF_WPS = 0.01; // 1% der WPS pro Klick, sobald freigeschaltet
+// Klick-System — Wissen/Klick lässt sich NUR über Höhlenzeichnungen (Basis-
+// Wissensquelle), Wissensquellen-Upgrades, Kern-Shop-Upgrades und Karten
+// steigern (siehe WISSENSQUELLEN_UPGRADES unten).
+export const CLICK_BASE_VALUE = 0.1;
+export const HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT = 0.1;
 
 // Prestige / Epochen
 export const EPOCH_BONUS_BASE = 5;
@@ -35,7 +36,30 @@ export const MAX_EPOCH_TIER = 5;
 // generiert wurde — wächst pro EpochenLevel stark, damit das Erreichen der
 // nächsten Epoche bewusst schwer bleibt.
 export const PRESTIGE_MIN_KNOWLEDGE_BASE = 1e9;
-export const PRESTIGE_MIN_KNOWLEDGE_GROWTH = 1000;
+export const PRESTIGE_MIN_KNOWLEDGE_GROWTH = 3000;
+
+/** Wissensquellen-Upgrades: schalten automatisch frei, sobald das jemals
+ * insgesamt generierte Wissen (lifetimeKnowledge) die Schwelle erreicht —
+ * kein Kauf nötig, "erscheinen" einfach. Bisher nur der erste Eintrag
+ * definiert, weitere folgen später. */
+export interface WissensquellenUpgradeDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlockAtLifetimeKnowledge: number;
+  wpsToClickPercent: number;
+}
+export const WISSENSQUELLEN_UPGRADES: WissensquellenUpgradeDef[] = [
+  {
+    id: "wq_upgrade_wps_to_click_1",
+    name: "Intuitives Verständnis",
+    description: "Klick gibt zusätzlich 1% der aktuellen Wissen-pro-Sekunde-Rate.",
+    icon: "💡",
+    unlockAtLifetimeKnowledge: 1e9,
+    wpsToClickPercent: 0.01,
+  },
+];
 
 // Synergie & Ketten
 export const SYNERGY_FACTOR = 0.05; // 5% * ln(1+Partneranzahl)

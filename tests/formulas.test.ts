@@ -3,34 +3,41 @@ import { Decimal } from "../src/game/decimal";
 import { createInitialPlayer } from "../src/game/state/initialState";
 import { BUILDINGS_BY_ID } from "../src/game/config/buildings";
 import {
+  baseClickValue,
   batchCost,
   buildingCost,
   buildingLocalMultiplier,
   buildingProduction,
   canPrestige,
   cardGearMultiplier,
+  clickValue,
   coresAwarded,
   epochenBonus,
   firstCoreKnowledgeThreshold,
   knowledgePerSecond,
   maxAffordable,
   prestigeMinKnowledge,
+  wissensquellenUpgradeClickPercent,
 } from "../src/game/formulas";
 import { ACHIEVEMENTS_BY_ID } from "../src/game/config/achievements";
 import {
   CHAIN_FACTOR,
+  CLICK_BASE_VALUE,
+  COST_GROWTH,
+  HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
   PRESTIGE_CORE_DIVISOR,
   PRESTIGE_MIN_KNOWLEDGE_BASE,
   PRESTIGE_MIN_KNOWLEDGE_GROWTH,
   SYNERGY_FACTOR,
+  WISSENSQUELLEN_UPGRADES,
 } from "../src/game/config/constants";
 
 describe("buildingCost", () => {
-  it("matches Kosten(n) = Basispreis * 1.15^n", () => {
+  it("matches Kosten(n) = Basispreis * COST_GROWTH^n", () => {
     const base = new Decimal(10);
     expect(buildingCost(base, 0).toNumber()).toBeCloseTo(10);
-    expect(buildingCost(base, 1).toNumber()).toBeCloseTo(11.5);
-    expect(buildingCost(base, 10).toNumber()).toBeCloseTo(10 * 1.15 ** 10, 4);
+    expect(buildingCost(base, 1).toNumber()).toBeCloseTo(10 * COST_GROWTH);
+    expect(buildingCost(base, 10).toNumber()).toBeCloseTo(10 * COST_GROWTH ** 10, 4);
   });
 });
 
@@ -79,14 +86,14 @@ describe("maxAffordable", () => {
 describe("Stacking-Regel: lokale Boni additiv, Kategorien multiplikativ", () => {
   it("combines synergy + chain additively for a single building", () => {
     const player = createInitialPlayer();
-    // e1_buecher (tierIndex 1) hat Synergie-Partner UND Ketten-Vorgänger
-    // e1_erzaehlungen (tierIndex 0, das niederschwellige Einstiegsgebäude).
-    player.buildings["e1_erzaehlungen"] = { owned: 100 };
-    player.buildings["e1_buecher"] = { owned: 1 };
+    // e1_erzaehlungen (tierIndex 1) hat Synergie-Partner UND Ketten-Vorgänger
+    // e1_hoehlenzeichnungen (tierIndex 0, das allererste Einstiegsgebäude).
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 100 };
+    player.buildings["e1_erzaehlungen"] = { owned: 1 };
 
     const expectedSynergy = SYNERGY_FACTOR * Math.log(1 + 100);
     const expectedChain = 100 * CHAIN_FACTOR;
-    const multiplier = buildingLocalMultiplier("e1_buecher", player);
+    const multiplier = buildingLocalMultiplier("e1_erzaehlungen", player);
     expect(multiplier).toBeCloseTo(1 + expectedSynergy + expectedChain, 6);
   });
 
@@ -167,5 +174,44 @@ describe("epochenBonus", () => {
     expect(epochenBonus(5).toNumber()).toBeCloseTo(3125, 6);
     // Epoche 5 ist kein Endpunkt: EpochenLevel > 5 wächst der Bonus weiter
     expect(epochenBonus(10).toNumber()).toBeCloseTo(5 ** 10, 4);
+  });
+});
+
+describe("Klickwert: Höhlenzeichnungen + Wissensquellen-Upgrades", () => {
+  it("baseClickValue starts at CLICK_BASE_VALUE and grows with owned Höhlenzeichnungen", () => {
+    const player = createInitialPlayer();
+    expect(baseClickValue(player).toNumber()).toBeCloseTo(CLICK_BASE_VALUE, 6);
+
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 4 };
+    expect(baseClickValue(player).toNumber()).toBeCloseTo(
+      CLICK_BASE_VALUE + 4 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
+      6,
+    );
+  });
+
+  it("Höhlenzeichnungen contribute 0 Wissen/Sek. despite their cost", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 50 };
+    expect(buildingProduction("e1_hoehlenzeichnungen", player).toNumber()).toBe(0);
+  });
+
+  it("wissensquellenUpgradeClickPercent unlocks automatically once lifetimeKnowledge crosses the threshold", () => {
+    const player = createInitialPlayer();
+    expect(wissensquellenUpgradeClickPercent(player)).toBe(0);
+
+    player.lifetimeKnowledge = new Decimal(WISSENSQUELLEN_UPGRADES[0].unlockAtLifetimeKnowledge);
+    expect(wissensquellenUpgradeClickPercent(player)).toBeCloseTo(
+      WISSENSQUELLEN_UPGRADES[0].wpsToClickPercent,
+      6,
+    );
+  });
+
+  it("clickValue adds the unlocked Wissensquellen-Upgrade's %WPS on top of the base click value", () => {
+    const player = createInitialPlayer();
+    player.lifetimeKnowledge = new Decimal(WISSENSQUELLEN_UPGRADES[0].unlockAtLifetimeKnowledge);
+    const kps = new Decimal(1000);
+    const value = clickValue(player, kps);
+    const expected = CLICK_BASE_VALUE + 1000 * WISSENSQUELLEN_UPGRADES[0].wpsToClickPercent;
+    expect(value.toNumber()).toBeCloseTo(expected, 6);
   });
 });

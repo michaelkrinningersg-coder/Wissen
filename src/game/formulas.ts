@@ -12,8 +12,6 @@ import {
   CARD_GEAR_THRESHOLDS,
   CHAIN_FACTOR,
   CLICK_BASE_VALUE,
-  CLICK_PHASE2_PERCENT_OF_WPS,
-  CLICK_PHASE2_UNLOCK_UPGRADE_ID,
   COST_GROWTH,
   DIVERSITY_FACTOR,
   EPOCH_BONUS_BASE,
@@ -24,6 +22,7 @@ import {
   PRESTIGE_MIN_KNOWLEDGE_GROWTH,
   RARITY_TABLE,
   SYNERGY_FACTOR,
+  WISSENSQUELLEN_UPGRADES,
 } from "./config/constants";
 
 // ---------------------------------------------------------------------------
@@ -281,15 +280,35 @@ export function knowledgePerSecond(
     .times(globalEventMultiplier(player));
 }
 
-export function clickValue(player: Player, kps: Decimal): Decimal {
-  const phase1 = new Decimal(CLICK_BASE_VALUE * (1 + clickUpgradeBonus(player)));
-  const phase2Unlocked = player.coreUpgrades.includes(CLICK_PHASE2_UNLOCK_UPGRADE_ID);
-  const buffMultiplier = player.activeCardBuffMultiplier > 0 ? player.activeCardBuffMultiplier : 1;
-  let value = phase1;
-  if (phase2Unlocked) {
-    value = value.plus(kps.times(CLICK_PHASE2_PERCENT_OF_WPS));
+/** Basis-Klickwert: CLICK_BASE_VALUE + Höhlenzeichnungen-Bonus (feste
+ * Wissensquellen, die statt Wissen/Sek. direkt den Klickwert erhöhen). */
+export function baseClickValue(player: Player): Decimal {
+  let value = new Decimal(CLICK_BASE_VALUE);
+  for (const b of BUILDINGS) {
+    if (!b.clickBonusPerUnit) continue;
+    value = value.plus(b.clickBonusPerUnit.times(ownedCount(player, b.id)));
   }
-  return value.times(clickEventMultiplier(player)).times(buffMultiplier);
+  return value;
+}
+
+/** Summe der freigeschalteten Wissensquellen-Upgrades (Abschnitt "später
+ * definierte Upgrades"): schalten automatisch anhand von lifetimeKnowledge
+ * frei, kein Kauf nötig. */
+export function wissensquellenUpgradeClickPercent(player: Player): number {
+  let bonus = 0;
+  for (const upgrade of WISSENSQUELLEN_UPGRADES) {
+    if (player.lifetimeKnowledge.gte(upgrade.unlockAtLifetimeKnowledge)) {
+      bonus += upgrade.wpsToClickPercent;
+    }
+  }
+  return bonus;
+}
+
+export function clickValue(player: Player, kps: Decimal): Decimal {
+  const base = baseClickValue(player).times(1 + clickUpgradeBonus(player));
+  const wqBonus = kps.times(wissensquellenUpgradeClickPercent(player));
+  const buffMultiplier = player.activeCardBuffMultiplier > 0 ? player.activeCardBuffMultiplier : 1;
+  return base.plus(wqBonus).times(clickEventMultiplier(player)).times(buffMultiplier);
 }
 
 // ---------------------------------------------------------------------------

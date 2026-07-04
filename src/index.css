@@ -68,7 +68,8 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 720px;
+  max-width: 1800px;
+  width: 100%;
   margin: 0 auto;
   position: relative;
   background: var(--bg);
@@ -94,14 +95,14 @@ button {
 }
 
 .app-header {
-  padding: 0.75rem 1rem 0.5rem;
+  padding: 0.75rem 1.5rem 0.5rem;
   border-bottom: 1px solid var(--border);
 }
 
 .app-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem 1rem 5rem;
+  padding: 0.75rem 1.5rem 5rem;
 }
 
 .tab-nav {
@@ -110,7 +111,7 @@ button {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 720px;
+  max-width: 1800px;
   display: flex;
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
@@ -172,23 +173,44 @@ button {
   color: var(--good);
 }
 
+/* Desktop-Vollbild-Layout (Standard): links Epoche, Mitte Klick-Button,
+   rechts die durchgehende Wissensquellen-Liste, ganz rechts reservierte
+   Spalte für Wissensquellen-Upgrades. Auf schmalen Bildschirmen (Handy im
+   Hochformat) fällt es per Media-Query auf eine gestapelte Spalte zurück. */
 .main-layout {
   display: grid;
-  grid-template-columns: minmax(100px, 1fr) minmax(0, 1.8fr);
-  gap: 0.6rem;
+  grid-template-columns: 260px minmax(280px, 360px) minmax(380px, 1fr) 280px;
+  gap: 1.25rem;
   align-items: start;
 }
 
-.main-left {
+.main-col-epoch,
+.main-col-click {
   position: sticky;
   top: 0.5rem;
+}
+
+.main-col-click {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.main-right {
+.main-col-buildings,
+.main-col-upgrades {
   min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .main-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main-col-epoch,
+  .main-col-click {
+    position: static;
+  }
 }
 
 .click-button-wrap {
@@ -198,13 +220,13 @@ button {
 }
 
 .click-button {
-  width: clamp(88px, 26vw, 140px);
-  height: clamp(88px, 26vw, 140px);
+  width: clamp(120px, 14vw, 190px);
+  height: clamp(120px, 14vw, 190px);
   border-radius: 50%;
   border: 3px solid var(--accent);
   background: radial-gradient(circle at 35% 30%, var(--bg-card), var(--bg));
   color: var(--text);
-  font-size: clamp(1.6rem, 7vw, 2.4rem);
+  font-size: clamp(2rem, 5vw, 3.2rem);
   display: flex;
   align-items: center;
   justify-content: center;
