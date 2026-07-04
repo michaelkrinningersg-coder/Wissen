@@ -2,7 +2,7 @@ import type { Decimal } from "../../game/decimal";
 import type { Player } from "../../game/types";
 import { formatInt, formatKnowledge, formatPercent, formatWissenProSekunde } from "../../game/format";
 import { isCoreShopFullyPurchased } from "../../game/config/coreUpgrades";
-import { PASSIVE_CORE_BONUS_PER_CORE } from "../../game/config/constants";
+import { passiveCoreBonusRate } from "../../game/formulas";
 
 interface ResourceBarProps {
   player: Player;
@@ -27,7 +27,7 @@ export function ResourceBar({ player, kps }: ResourceBarProps) {
         <div className="resource-value">
           {formatKnowledge(player.intelligenceCores)}
           {showCoreBonus && (
-            <span className="resource-sub"> (+{formatPercent(PASSIVE_CORE_BONUS_PER_CORE)}/Kern)</span>
+            <span className="resource-sub"> (+{formatPercent(passiveCoreBonusRate(player))}/Kern)</span>
           )}
         </div>
       </div>

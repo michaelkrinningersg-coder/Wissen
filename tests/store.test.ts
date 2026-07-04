@@ -127,8 +127,8 @@ describe("game store", () => {
       player: {
         ...s.player,
         knowledge: s.player.knowledge.plus(1_000_000),
-        // Muss >= PRESTIGE_MIN_KNOWLEDGE_BASE (1e9) sein, damit Prestige erlaubt ist.
-        knowledgeEarnedThisRun: s.player.knowledgeEarnedThisRun.plus(4_000_000_000),
+        // Muss >= PRESTIGE_MIN_KNOWLEDGE_BASE (1e15) sein, damit Prestige erlaubt ist.
+        knowledgeEarnedThisRun: s.player.knowledgeEarnedThisRun.plus(4_000_000_000_000_000),
         buildings: { ...s.player.buildings, e1_buecher: { owned: 20 } },
         achievements: ["ach_production_0"],
       },
@@ -138,7 +138,7 @@ describe("game store", () => {
     expect(player.knowledge.toNumber()).toBe(0);
     expect(player.buildings["e1_buecher"].owned).toBe(0);
     expect(player.epochenLevel).toBe(1);
-    expect(player.intelligenceCores.toNumber()).toBe(63); // floor(sqrt(4_000_000_000/1_000_000)) = 63
+    expect(player.intelligenceCores.toNumber()).toBe(63_245); // floor(sqrt(4e15/1e6)) = floor(sqrt(4e9)) = 63245
     expect(player.achievements).toContain("ach_production_0"); // Achievements resetten nie
     expect(player.prestigeCount).toBe(1);
   });

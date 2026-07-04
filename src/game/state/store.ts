@@ -17,7 +17,6 @@ import {
   EVENT_SPAWN_INTERVAL_MIN_S,
   KPS_HISTORY_MAX_POINTS,
   KPS_HISTORY_SAMPLE_INTERVAL_S,
-  PASSIVE_CORE_BONUS_PER_CORE,
 } from "../config/constants";
 
 export type BuyAmount = 1 | 5 | 10 | 25 | 50 | 100 | "max";
@@ -184,7 +183,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         buildings: Object.fromEntries(BUILDINGS.map((b) => [b.id, { owned: 0 }])),
         intelligenceCores: fullyPurchased ? player.intelligenceCores : player.intelligenceCores.plus(cores),
         passiveCoreBonusPercent: fullyPurchased
-          ? player.passiveCoreBonusPercent + cores.toNumber() * PASSIVE_CORE_BONUS_PER_CORE
+          ? player.passiveCoreBonusPercent + cores.toNumber() * formulas.passiveCoreBonusRate(player)
           : player.passiveCoreBonusPercent,
         totalCoresEarned: player.totalCoresEarned.plus(cores),
         epochenLevel: newEpochLevel,

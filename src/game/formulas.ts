@@ -6,6 +6,7 @@ import { CORE_UPGRADES_BY_ID } from "./config/coreUpgrades";
 import { CARDS_BY_ID } from "./config/cards";
 import { AI_BUILDING_IDS, GAME_EVENTS_BY_ID } from "./config/events";
 import {
+  BUILDING_MILESTONES,
   CARD_CLICK_DROP_BASE_CHANCE,
   CARD_DROP_CHANCE_CEILING,
   CARD_DROP_LOG_SCALE,
@@ -17,6 +18,8 @@ import {
   EPOCH_BONUS_BASE,
   MASS_FACTOR,
   MAX_EPOCH_TIER,
+  PASSIVE_CORE_BONUS_PER_ACHIEVEMENT,
+  PASSIVE_CORE_BONUS_PER_CORE_BASE,
   PRESTIGE_CORE_DIVISOR,
   PRESTIGE_MIN_KNOWLEDGE_BASE,
   PRESTIGE_MIN_KNOWLEDGE_GROWTH,
@@ -111,11 +114,25 @@ function aiBuildingEventMultiplier(player: Player): Decimal {
   return multiplier;
 }
 
+/** Wissensquellen-Meilensteine: alle bei der besessenen Anzahl erreichten
+ * Stufen stacken multiplikativ (z.B. 75 besessen -> ×1.25 × ×1.25 aus den
+ * Stufen 50 und 75). */
+export function buildingMilestoneMultiplier(owned: number): number {
+  let multiplier = 1;
+  for (const milestone of BUILDING_MILESTONES) {
+    if (owned >= milestone.threshold) multiplier *= milestone.multiplier;
+  }
+  return multiplier;
+}
+
 export function buildingProduction(buildingId: string, player: Player): Decimal {
   const def = BUILDINGS_BY_ID[buildingId];
   const owned = ownedCount(player, buildingId);
   if (!def || owned <= 0) return ZERO;
-  let production = def.baseProduction.times(owned).times(buildingLocalMultiplier(buildingId, player));
+  let production = def.baseProduction
+    .times(owned)
+    .times(buildingLocalMultiplier(buildingId, player))
+    .times(buildingMilestoneMultiplier(owned));
   if (AI_BUILDING_IDS.has(buildingId)) {
     production = production.times(aiBuildingEventMultiplier(player));
   }
@@ -165,6 +182,12 @@ export function canPrestige(player: Player): boolean {
  * floor(sqrt(x / Divisor)) >= 1  <=>  x >= Divisor. */
 export function firstCoreKnowledgeThreshold(): Decimal {
   return new Decimal(PRESTIGE_CORE_DIVISOR);
+}
+
+/** Bonus je ungenutztem Kern (sobald Kern-Shop komplett ausgebaut ist):
+ * Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement. */
+export function passiveCoreBonusRate(player: Player): number {
+  return PASSIVE_CORE_BONUS_PER_CORE_BASE + player.achievements.length * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT;
 }
 
 export function prestigeBonus(player: Player): Decimal {
@@ -286,7 +309,8 @@ export function baseClickValue(player: Player): Decimal {
   let value = new Decimal(CLICK_BASE_VALUE);
   for (const b of BUILDINGS) {
     if (!b.clickBonusPerUnit) continue;
-    value = value.plus(b.clickBonusPerUnit.times(ownedCount(player, b.id)));
+    const owned = ownedCount(player, b.id);
+    value = value.plus(b.clickBonusPerUnit.times(owned).times(buildingMilestoneMultiplier(owned)));
   }
   return value;
 }

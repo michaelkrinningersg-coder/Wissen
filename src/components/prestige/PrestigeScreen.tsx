@@ -5,7 +5,6 @@ import { formatDuration, formatKnowledge, formatPercent } from "../../game/forma
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ProgressBar } from "../common/ProgressBar";
 import { CoreShopTree } from "./CoreShopTree";
-import { PASSIVE_CORE_BONUS_PER_CORE } from "../../game/config/constants";
 
 const EPOCH_NAMES: Record<number, string> = {
   1: "Antike",
@@ -53,7 +52,7 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
         </div>
         <div className="text-dim">
           🌟 {hasFirstCore ? "Erster Kern erhalten bei" : "Erster Kern ab"}: {formatKnowledge(firstCoreThreshold)}{" "}
-          generiertem Wissen · Bonus je ungenutztem Kern: +{formatPercent(PASSIVE_CORE_BONUS_PER_CORE)} Wissen/Sek.
+          generiertem Wissen · Bonus je ungenutztem Kern: +{formatPercent(formulas.passiveCoreBonusRate(player))} Wissen/Sek.
           (sobald Kern-Shop komplett ausgebaut ist)
         </div>
       </div>

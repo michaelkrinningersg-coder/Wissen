@@ -19,10 +19,10 @@ interface MainScreenProps {
   onPrestige: () => void;
 }
 
-// Desktop-Layout, volle Bildschirmbreite: links Epochen-/Prestige-Panel,
-// mittig der Klick-Button, rechts die Wissensquellen als durchgehende Liste,
-// ganz rechts reservierte Spalte für (später weiter definierte)
-// Wissensquellen-Upgrades.
+// Desktop-Layout, volle Bildschirmbreite: links kompakte Sidebar mit
+// Wissensquellen-Upgrades, mittig (breit) der Klick-Button mit dem
+// Epochen-/Prestige-Weg darunter, rechts die Wissensquellen als
+// durchgehende Sidebar-Liste.
 export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }: MainScreenProps) {
   const [buyAmount, setBuyAmount] = useState<BuyAmount>(1);
   const kps = formulas.knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
@@ -31,13 +31,14 @@ export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }
 
   return (
     <div className="main-layout">
-      <div className="main-col main-col-epoch">
-        <EpochPanel player={player} onPrestige={onPrestige} />
+      <div className="main-col main-col-upgrades">
+        <WissensquellenUpgradesPanel player={player} />
       </div>
 
       <div className="main-col main-col-click">
         <ClickButton onClick={onClick} clickValueLabel={formatKnowledge(clickValue)} />
         <ComboBuildingsPanel player={player} onUnlock={onUnlockCombo} />
+        <EpochPanel player={player} onPrestige={onPrestige} />
       </div>
 
       <div className="main-col main-col-buildings">
@@ -46,10 +47,6 @@ export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }
         </div>
         <BuyAmountControl value={buyAmount} onChange={setBuyAmount} unlocked={buyXUnlocked} />
         <BuildingList player={player} buyAmount={buyAmount} onBuy={(id) => onBuy(id, buyAmount)} />
-      </div>
-
-      <div className="main-col main-col-upgrades">
-        <WissensquellenUpgradesPanel player={player} />
       </div>
     </div>
   );

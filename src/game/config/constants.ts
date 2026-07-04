@@ -35,8 +35,26 @@ export const MAX_EPOCH_TIER = 5;
 // Prestige ist erst möglich, sobald in diesem Run mindestens so viel Wissen
 // generiert wurde — wächst pro EpochenLevel stark, damit das Erreichen der
 // nächsten Epoche bewusst schwer bleibt.
-export const PRESTIGE_MIN_KNOWLEDGE_BASE = 1e9;
+export const PRESTIGE_MIN_KNOWLEDGE_BASE = 1e15;
 export const PRESTIGE_MIN_KNOWLEDGE_GROWTH = 3000;
+
+/** Wissensquellen-Meilensteine (Abschnitt "Stufen"): je Gebäude EIGENSTÄNDIG
+ * anhand der besessenen Anzahl ausgewertet, alle erreichten Stufen
+ * multiplizieren sich (stacken). Gilt bei Höhlenzeichnungen auf den
+ * Wissen/Klick-Bonus, bei allen anderen Gebäuden auf Wissen/Sek. */
+export const BUILDING_MILESTONES: Array<{ threshold: number; multiplier: number }> = [
+  { threshold: 50, multiplier: 1.25 },
+  { threshold: 75, multiplier: 1.25 },
+  { threshold: 100, multiplier: 1.25 },
+  { threshold: 125, multiplier: 1.25 },
+  { threshold: 150, multiplier: 1.25 },
+  { threshold: 200, multiplier: 1.5 },
+  { threshold: 300, multiplier: 1.5 },
+  { threshold: 400, multiplier: 1.5 },
+  { threshold: 500, multiplier: 2 },
+  { threshold: 750, multiplier: 4 },
+  { threshold: 1000, multiplier: 6 },
+];
 
 /** Wissensquellen-Upgrades: schalten automatisch frei, sobald das jemals
  * insgesamt generierte Wissen (lifetimeKnowledge) die Schwelle erreicht —
@@ -69,8 +87,10 @@ export const CHAIN_FACTOR = 0.002; // 0.2% pro Einheit des Vorgänger-Gebäudes
 export const DIVERSITY_FACTOR = 0.02; // 2% pro unterschiedlichem Typ
 export const MASS_FACTOR = 0.01; // 1% * sqrt(GesamtAnzahl)
 
-// Kern-Shop Überschuss
-export const PASSIVE_CORE_BONUS_PER_CORE = 0.02; // +2% WPS pro ungenutztem Kern
+// Kern-Shop Überschuss: Basis-Bonus je ungenutztem Kern, steigt mit jedem
+// freigeschalteten Achievement um einen festen Zuschlag.
+export const PASSIVE_CORE_BONUS_PER_CORE_BASE = 0.02; // +2% WPS pro ungenutztem Kern
+export const PASSIVE_CORE_BONUS_PER_ACHIEVEMENT = 0.002; // +0,2 Prozentpunkte je Achievement
 
 // Karten: Dropchance wird bei jedem Klick auf den Wissen-Button geprüft,
 // unabhängig je Wissensquelle (nicht je Epoche) — Basis 1:1.000.000 Klicks

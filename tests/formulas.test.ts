@@ -7,6 +7,7 @@ import {
   batchCost,
   buildingCost,
   buildingLocalMultiplier,
+  buildingMilestoneMultiplier,
   buildingProduction,
   canPrestige,
   cardGearMultiplier,
@@ -16,6 +17,7 @@ import {
   firstCoreKnowledgeThreshold,
   knowledgePerSecond,
   maxAffordable,
+  passiveCoreBonusRate,
   prestigeMinKnowledge,
   wissensquellenUpgradeClickPercent,
 } from "../src/game/formulas";
@@ -25,6 +27,8 @@ import {
   CLICK_BASE_VALUE,
   COST_GROWTH,
   HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
+  PASSIVE_CORE_BONUS_PER_ACHIEVEMENT,
+  PASSIVE_CORE_BONUS_PER_CORE_BASE,
   PRESTIGE_CORE_DIVISOR,
   PRESTIGE_MIN_KNOWLEDGE_BASE,
   PRESTIGE_MIN_KNOWLEDGE_GROWTH,
@@ -138,11 +142,12 @@ describe("firstCoreKnowledgeThreshold", () => {
 
 describe("prestigeMinKnowledge / canPrestige", () => {
   it("grows by PRESTIGE_MIN_KNOWLEDGE_GROWTH per EpochenLevel, starting at the base", () => {
-    expect(prestigeMinKnowledge(0).toNumber()).toBeCloseTo(PRESTIGE_MIN_KNOWLEDGE_BASE, 0);
-    expect(prestigeMinKnowledge(1).toNumber()).toBeCloseTo(
-      PRESTIGE_MIN_KNOWLEDGE_BASE * PRESTIGE_MIN_KNOWLEDGE_GROWTH,
-      0,
-    );
+    // toBeCloseTo vergleicht absolute Nachkommastellen, ungeeignet für diese
+    // Größenordnung (1e15+) -> stattdessen relatives Verhältnis prüfen.
+    expect(prestigeMinKnowledge(0).div(PRESTIGE_MIN_KNOWLEDGE_BASE).toNumber()).toBeCloseTo(1, 6);
+    expect(
+      prestigeMinKnowledge(1).div(PRESTIGE_MIN_KNOWLEDGE_BASE * PRESTIGE_MIN_KNOWLEDGE_GROWTH).toNumber(),
+    ).toBeCloseTo(1, 6);
   });
 
   it("blocks prestige below the threshold and allows it at/above", () => {
@@ -213,5 +218,45 @@ describe("Klickwert: Höhlenzeichnungen + Wissensquellen-Upgrades", () => {
     const value = clickValue(player, kps);
     const expected = CLICK_BASE_VALUE + 1000 * WISSENSQUELLEN_UPGRADES[0].wpsToClickPercent;
     expect(value.toNumber()).toBeCloseTo(expected, 6);
+  });
+});
+
+describe("buildingMilestoneMultiplier", () => {
+  it("stacks every reached threshold multiplicatively", () => {
+    expect(buildingMilestoneMultiplier(0)).toBe(1);
+    expect(buildingMilestoneMultiplier(49)).toBe(1);
+    expect(buildingMilestoneMultiplier(50)).toBeCloseTo(1.25, 6);
+    expect(buildingMilestoneMultiplier(75)).toBeCloseTo(1.25 * 1.25, 6);
+    expect(buildingMilestoneMultiplier(150)).toBeCloseTo(1.25 ** 5, 6);
+    expect(buildingMilestoneMultiplier(1000)).toBeCloseTo(1.25 ** 5 * 1.5 ** 3 * 2 * 4 * 6, 4);
+  });
+
+  it("applies to a building's Wissen/Sek. production once its threshold is reached", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_erzaehlungen"] = { owned: 50 };
+    const def = BUILDINGS_BY_ID["e1_erzaehlungen"];
+    const withoutMilestone = def.baseProduction.times(50).times(buildingLocalMultiplier("e1_erzaehlungen", player));
+    const actual = buildingProduction("e1_erzaehlungen", player);
+    expect(actual.div(withoutMilestone).toNumber()).toBeCloseTo(1.25, 6);
+  });
+
+  it("applies to Höhlenzeichnungen' click bonus instead of Wissen/Sek.", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 50 };
+    expect(buildingProduction("e1_hoehlenzeichnungen", player).toNumber()).toBe(0);
+    const expectedClickBonus = CLICK_BASE_VALUE + 50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * 1.25;
+    expect(baseClickValue(player).toNumber()).toBeCloseTo(expectedClickBonus, 6);
+  });
+});
+
+describe("passiveCoreBonusRate", () => {
+  it("adds a fixed increment per unlocked achievement on top of the base rate", () => {
+    const player = createInitialPlayer();
+    expect(passiveCoreBonusRate(player)).toBeCloseTo(PASSIVE_CORE_BONUS_PER_CORE_BASE, 6);
+    player.achievements = ["a", "b", "c"];
+    expect(passiveCoreBonusRate(player)).toBeCloseTo(
+      PASSIVE_CORE_BONUS_PER_CORE_BASE + 3 * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT,
+      6,
+    );
   });
 });

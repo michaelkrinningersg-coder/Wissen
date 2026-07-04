@@ -173,24 +173,22 @@ button {
   color: var(--good);
 }
 
-/* Desktop-Vollbild-Layout (Standard): links Epoche, Mitte Klick-Button,
-   rechts die durchgehende Wissensquellen-Liste, ganz rechts reservierte
-   Spalte für Wissensquellen-Upgrades. Auf schmalen Bildschirmen (Handy im
-   Hochformat) fällt es per Media-Query auf eine gestapelte Spalte zurück. */
+/* Desktop-Vollbild-Layout (Standard): links kompakte Sidebar mit
+   Wissensquellen-Upgrades (Name+Schwelle, Details per Hover), mittig
+   (breit) Klick-Button + Epochen-/Prestige-Weg darunter, rechts die
+   durchgehende Wissensquellen-Liste als Sidebar. Auf schmalen Bildschirmen
+   (Handy im Hochformat) fällt es per Media-Query auf eine gestapelte
+   Spalte zurück. */
 .main-layout {
   display: grid;
-  grid-template-columns: 260px minmax(280px, 360px) minmax(380px, 1fr) 280px;
+  grid-template-columns: 220px minmax(420px, 1fr) minmax(320px, 420px);
   gap: 1.25rem;
   align-items: start;
 }
 
-.main-col-epoch,
 .main-col-click {
   position: sticky;
   top: 0.5rem;
-}
-
-.main-col-click {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -201,14 +199,19 @@ button {
   min-width: 0;
 }
 
+.main-col-upgrades {
+  position: sticky;
+  top: 0.5rem;
+}
+
 @media (max-width: 980px) {
   .main-layout {
     display: flex;
     flex-direction: column;
   }
 
-  .main-col-epoch,
-  .main-col-click {
+  .main-col-click,
+  .main-col-upgrades {
     position: static;
   }
 }
@@ -245,6 +248,43 @@ button {
   font-size: 0.85rem;
   margin-top: -0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.epoch-panel {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 1rem;
+}
+
+.wq-upgrade-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+  cursor: help;
+}
+
+.wq-upgrade-compact.unlocked {
+  border-color: var(--good);
+}
+
+.wq-upgrade-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wq-upgrade-cost {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .section-title {
