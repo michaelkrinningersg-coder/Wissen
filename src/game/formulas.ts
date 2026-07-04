@@ -6,7 +6,9 @@ import { CORE_UPGRADES_BY_ID } from "./config/coreUpgrades";
 import { CARDS_BY_ID } from "./config/cards";
 import { AI_BUILDING_IDS, GAME_EVENTS_BY_ID } from "./config/events";
 import {
+  BUILDING_CROSS_SCALING_FACTOR,
   BUILDING_MILESTONES,
+  BUILDING_SELF_SCALING_FACTOR,
   CARD_CLICK_DROP_BASE_CHANCE,
   CARD_DROP_CHANCE_CEILING,
   CARD_DROP_LOG_SCALE,
@@ -96,12 +98,27 @@ export function comboBonus(buildingId: string, player: Player): number {
   return bonus;
 }
 
+/** Basisverdienst-Skalierung: eigene Anzahl zählt stark (z.B. 100
+ * Höhlenzeichnungen -> +100%), jede andere besessene Wissensquelle
+ * (unabhängig vom Typ) zählt schwächer. Gilt für alle Gebäude gleich,
+ * inklusive solcher, die statt Wissen/Sek. den Klickwert erhöhen. */
+export function buildingScalingBonus(buildingId: string, player: Player): number {
+  const ownedSelf = ownedCount(player, buildingId);
+  let ownedOthers = 0;
+  for (const b of BUILDINGS) {
+    if (b.id === buildingId) continue;
+    ownedOthers += ownedCount(player, b.id);
+  }
+  return ownedSelf * BUILDING_SELF_SCALING_FACTOR + ownedOthers * BUILDING_CROSS_SCALING_FACTOR;
+}
+
 export function buildingLocalMultiplier(buildingId: string, player: Player): number {
   return (
     1 +
     synergyBonus(buildingId, player) +
     chainBonusFromPrevious(buildingId, player) +
-    comboBonus(buildingId, player)
+    comboBonus(buildingId, player) +
+    buildingScalingBonus(buildingId, player)
   );
 }
 
@@ -321,7 +338,12 @@ export function baseClickValue(player: Player): Decimal {
   for (const b of BUILDINGS) {
     if (!b.clickBonusPerUnit) continue;
     const owned = ownedCount(player, b.id);
-    value = value.plus(b.clickBonusPerUnit.times(owned).times(buildingMilestoneMultiplier(owned)));
+    value = value.plus(
+      b.clickBonusPerUnit
+        .times(owned)
+        .times(buildingLocalMultiplier(b.id, player))
+        .times(buildingMilestoneMultiplier(owned)),
+    );
   }
   return value;
 }

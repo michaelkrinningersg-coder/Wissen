@@ -330,6 +330,9 @@ button {
   aspect-ratio: 2 / 1;
   min-height: 0;
   height: auto;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
 }
 
 .building-row .icon {

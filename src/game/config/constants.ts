@@ -83,6 +83,12 @@ export const WISSENSQUELLEN_UPGRADES: WissensquellenUpgradeDef[] = [
 export const SYNERGY_FACTOR = 0.05; // 5% * ln(1+Partneranzahl)
 export const CHAIN_FACTOR = 0.002; // 0.2% pro Einheit des Vorgänger-Gebäudes
 
+// Basisverdienst-Skalierung je Gebäude: eigene Anzahl zählt stark (1% pro
+// Einheit desselben Typs, z.B. 100 Höhlenzeichnungen -> +100%), jede andere
+// besessene Wissensquelle (unabhängig vom Typ) zählt schwächer (0,1%/Einheit).
+export const BUILDING_SELF_SCALING_FACTOR = 0.01; // 1% pro Einheit desselben Typs
+export const BUILDING_CROSS_SCALING_FACTOR = 0.001; // 0,1% pro Einheit jeder anderen Wissensquelle
+
 // Diversität & Masse
 export const DIVERSITY_FACTOR = 0.02; // 2% pro unterschiedlichem Typ
 export const MASS_FACTOR = 0.01; // 1% * sqrt(GesamtAnzahl)

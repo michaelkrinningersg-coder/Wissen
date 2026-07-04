@@ -17,6 +17,7 @@ export function BuildingRow({ def, player, onBuy }: BuildingRowProps) {
   const contribution = isClickBuilding
     ? (def.clickBonusPerUnit ?? formulas.buildingProduction(def.id, player))
         .times(owned)
+        .times(formulas.buildingLocalMultiplier(def.id, player))
         .times(formulas.buildingMilestoneMultiplier(owned))
     : formulas.buildingProduction(def.id, player);
   const total = isClickBuilding

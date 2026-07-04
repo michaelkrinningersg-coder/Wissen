@@ -9,6 +9,7 @@ import {
   buildingLocalMultiplier,
   buildingMilestoneMultiplier,
   buildingProduction,
+  buildingScalingBonus,
   canMiniPrestige,
   canPrestige,
   cardGearMultiplier,
@@ -99,8 +100,27 @@ describe("Stacking-Regel: lokale Boni additiv, Kategorien multiplikativ", () => 
 
     const expectedSynergy = SYNERGY_FACTOR * Math.log(1 + 100);
     const expectedChain = 100 * CHAIN_FACTOR;
+    const expectedScaling = buildingScalingBonus("e1_erzaehlungen", player);
     const multiplier = buildingLocalMultiplier("e1_erzaehlungen", player);
-    expect(multiplier).toBeCloseTo(1 + expectedSynergy + expectedChain, 6);
+    expect(multiplier).toBeCloseTo(1 + expectedSynergy + expectedChain + expectedScaling, 6);
+  });
+});
+
+describe("buildingScalingBonus", () => {
+  it("adds 1% per owned unit of the same type, e.g. +100% at 100 units", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 100 };
+    expect(buildingScalingBonus("e1_hoehlenzeichnungen", player)).toBeCloseTo(1, 6);
+  });
+
+  it("adds 0.1% per owned unit of every other building type, regardless of type", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 10 };
+    player.buildings["e1_buecher"] = { owned: 20 };
+    player.buildings["e2_labore"] = { owned: 5 };
+
+    expect(buildingScalingBonus("e1_hoehlenzeichnungen", player)).toBeCloseTo(10 * 0.01 + 25 * 0.001, 6);
+    expect(buildingScalingBonus("e1_buecher", player)).toBeCloseTo(20 * 0.01 + 15 * 0.001, 6);
   });
 
   it("multiplies categories (epoch/prestige/global-block/event) rather than adding them", () => {
@@ -190,8 +210,9 @@ describe("Klickwert: Höhlenzeichnungen + Wissensquellen-Upgrades", () => {
     expect(baseClickValue(player).toNumber()).toBeCloseTo(CLICK_BASE_VALUE, 6);
 
     player.buildings["e1_hoehlenzeichnungen"] = { owned: 4 };
+    const localMultiplier = buildingLocalMultiplier("e1_hoehlenzeichnungen", player);
     expect(baseClickValue(player).toNumber()).toBeCloseTo(
-      CLICK_BASE_VALUE + 4 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
+      CLICK_BASE_VALUE + 4 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * localMultiplier,
       6,
     );
   });
@@ -246,7 +267,9 @@ describe("buildingMilestoneMultiplier", () => {
     const player = createInitialPlayer();
     player.buildings["e1_hoehlenzeichnungen"] = { owned: 50 };
     expect(buildingProduction("e1_hoehlenzeichnungen", player).toNumber()).toBe(0);
-    const expectedClickBonus = CLICK_BASE_VALUE + 50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * 1.25;
+    const localMultiplier = buildingLocalMultiplier("e1_hoehlenzeichnungen", player);
+    const expectedClickBonus =
+      CLICK_BASE_VALUE + 50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * 1.25 * localMultiplier;
     expect(baseClickValue(player).toNumber()).toBeCloseTo(expectedClickBonus, 6);
   });
 });
