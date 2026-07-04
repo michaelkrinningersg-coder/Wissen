@@ -28,23 +28,15 @@ function App() {
   const actions = useGameStore((s) => s.actions);
 
   useEffect(() => {
-    // Der Save-Load + Offline-Progress darf nur EIN einziges Mal pro
-    // Sitzung passieren. Der Rest (Loop/Autosave/Listener) muss dagegen bei
-    // JEDEM Mount neu aufgebaut werden, weil React (StrictMode im Dev-Server)
-    // Effects doppelt ausführt: mount → cleanup → mount. Würde man das per
-    // `bootstrapped`-Flag komplett überspringen, bliebe die Tick-Engine nach
-    // dem ersten Cleanup dauerhaft gestoppt (Wissen/Sek. wird zwar weiter
-    // angezeigt, da rein aus dem Gebäude-Bestand berechnet, zählt aber nie
-    // mehr hoch).
-    if (!bootstrapped) {
-      bootstrapped = true;
-      const loaded = loadFromLocalStorage();
-      if (loaded) {
-        const { player: withOffline, offlineSeconds, offlineGain } = applyOfflineProgress(loaded, Date.now());
-        actions.replacePlayer(withOffline);
-        if (offlineSeconds >= 60) {
-          setOfflineInfo({ seconds: offlineSeconds, gain: formatKnowledge(offlineGain) });
-        }
+    if (bootstrapped) return;
+    bootstrapped = true;
+
+    const loaded = loadFromLocalStorage();
+    if (loaded) {
+      const { player: withOffline, offlineSeconds, offlineGain } = applyOfflineProgress(loaded, Date.now());
+      actions.replacePlayer(withOffline);
+      if (offlineSeconds >= 60) {
+        setOfflineInfo({ seconds: offlineSeconds, gain: formatKnowledge(offlineGain) });
       }
     }
 
