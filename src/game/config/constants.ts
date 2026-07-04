@@ -43,6 +43,9 @@ export const PRESTIGE_MIN_KNOWLEDGE_GROWTH = 3000;
  * multiplizieren sich (stacken). Gilt bei Höhlenzeichnungen auf den
  * Wissen/Klick-Bonus, bei allen anderen Gebäuden auf Wissen/Sek. */
 export const BUILDING_MILESTONES: Array<{ threshold: number; multiplier: number }> = [
+  { threshold: 10, multiplier: 1.25 },
+  { threshold: 15, multiplier: 1.25 },
+  { threshold: 25, multiplier: 1.25 },
   { threshold: 50, multiplier: 1.25 },
   { threshold: 75, multiplier: 1.25 },
   { threshold: 100, multiplier: 1.25 },

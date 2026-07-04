@@ -26,6 +26,7 @@ import {
 } from "../src/game/formulas";
 import { ACHIEVEMENTS_BY_ID } from "../src/game/config/achievements";
 import {
+  BUILDING_MILESTONES,
   CHAIN_FACTOR,
   CLICK_BASE_VALUE,
   COST_GROWTH,
@@ -244,14 +245,17 @@ describe("Klickwert: Höhlenzeichnungen + Wissensquellen-Upgrades", () => {
   });
 });
 
+function expectedMilestoneMultiplier(owned: number): number {
+  return BUILDING_MILESTONES.filter((m) => owned >= m.threshold).reduce((acc, m) => acc * m.multiplier, 1);
+}
+
 describe("buildingMilestoneMultiplier", () => {
   it("stacks every reached threshold multiplicatively", () => {
     expect(buildingMilestoneMultiplier(0)).toBe(1);
-    expect(buildingMilestoneMultiplier(49)).toBe(1);
-    expect(buildingMilestoneMultiplier(50)).toBeCloseTo(1.25, 6);
-    expect(buildingMilestoneMultiplier(75)).toBeCloseTo(1.25 * 1.25, 6);
-    expect(buildingMilestoneMultiplier(150)).toBeCloseTo(1.25 ** 5, 6);
-    expect(buildingMilestoneMultiplier(1000)).toBeCloseTo(1.25 ** 5 * 1.5 ** 3 * 2 * 4 * 6, 4);
+    expect(buildingMilestoneMultiplier(9)).toBe(1);
+    for (const owned of [10, 25, 50, 75, 150, 1000]) {
+      expect(buildingMilestoneMultiplier(owned)).toBeCloseTo(expectedMilestoneMultiplier(owned), 6);
+    }
   });
 
   it("applies to a building's Wissen/Sek. production once its threshold is reached", () => {
@@ -260,7 +264,7 @@ describe("buildingMilestoneMultiplier", () => {
     const def = BUILDINGS_BY_ID["e1_erzaehlungen"];
     const withoutMilestone = def.baseProduction.times(50).times(buildingLocalMultiplier("e1_erzaehlungen", player));
     const actual = buildingProduction("e1_erzaehlungen", player);
-    expect(actual.div(withoutMilestone).toNumber()).toBeCloseTo(1.25, 6);
+    expect(actual.div(withoutMilestone).toNumber()).toBeCloseTo(expectedMilestoneMultiplier(50), 6);
   });
 
   it("applies to Höhlenzeichnungen' click bonus instead of Wissen/Sek.", () => {
@@ -269,7 +273,8 @@ describe("buildingMilestoneMultiplier", () => {
     expect(buildingProduction("e1_hoehlenzeichnungen", player).toNumber()).toBe(0);
     const localMultiplier = buildingLocalMultiplier("e1_hoehlenzeichnungen", player);
     const expectedClickBonus =
-      CLICK_BASE_VALUE + 50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * 1.25 * localMultiplier;
+      CLICK_BASE_VALUE +
+      50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * expectedMilestoneMultiplier(50) * localMultiplier;
     expect(baseClickValue(player).toNumber()).toBeCloseTo(expectedClickBonus, 6);
   });
 });
