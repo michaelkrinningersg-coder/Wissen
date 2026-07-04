@@ -149,6 +149,7 @@ export interface Player {
   playtimeByEpoch: Record<number, number>;
 
   prestigeCount: number;
+  miniPrestigeCount: number;
   epoch5LoopCount: number;
   epochCompletionTimes: Record<number, number>; // epoch -> seconds taken
   currentEpochStartedAt: number;

@@ -96,12 +96,14 @@ function App() {
             onBuy={(id) => withRefresh(() => actions.buyBuilding(id, 1))}
             onUnlockCombo={(id) => withRefresh(() => actions.unlockComboBuilding(id))}
             onPrestige={() => withRefresh(actions.prestige)}
+            onMiniPrestige={() => withRefresh(actions.miniPrestige)}
           />
         )}
         {tab === "prestige" && (
           <PrestigeScreen
             player={player}
             onPrestige={() => withRefresh(actions.prestige)}
+            onMiniPrestige={() => withRefresh(actions.miniPrestige)}
             onPurchaseUpgrade={(id) => withRefresh(() => actions.purchaseCoreUpgrade(id))}
           />
         )}

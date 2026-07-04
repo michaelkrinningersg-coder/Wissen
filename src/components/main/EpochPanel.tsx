@@ -16,17 +16,20 @@ const EPOCH_NAMES: Record<number, string> = {
 interface EpochPanelProps {
   player: Player;
   onPrestige: () => void;
+  onMiniPrestige: () => void;
 }
 
 /** Kompaktes Epochen-/Prestige-Panel für die linke Spalte des Hauptbildschirms
  * (Details + Kern-Shop bleiben im "Epochen"-Tab). */
-export function EpochPanel({ player, onPrestige }: EpochPanelProps) {
+export function EpochPanel({ player, onPrestige, onMiniPrestige }: EpochPanelProps) {
   const [confirming, setConfirming] = useState(false);
+  const [confirmingMini, setConfirmingMini] = useState(false);
   const currentEpoch = Math.min(player.epochenLevel + 1, 5);
   const bonus = formulas.epochenBonus(player.epochenLevel);
   const cores = formulas.coresAwarded(player.knowledgeEarnedThisRun);
   const minKnowledge = formulas.prestigeMinKnowledge(player.epochenLevel);
   const eligible = formulas.canPrestige(player);
+  const miniEligible = formulas.canMiniPrestige(player);
   const progress = player.knowledgeEarnedThisRun.div(minKnowledge).toNumber();
 
   return (
@@ -55,6 +58,21 @@ export function EpochPanel({ player, onPrestige }: EpochPanelProps) {
         Prestige {eligible ? `(🌟 +${formatKnowledge(cores)})` : ""}
       </button>
 
+      <button
+        type="button"
+        className="button-secondary"
+        style={{ marginTop: "0.4rem", width: "100%" }}
+        disabled={!miniEligible}
+        onClick={() => setConfirmingMini(true)}
+        title={
+          miniEligible
+            ? "Setzt Wissen, Gebäude und den Fortschritt zur nächsten Epoche zurück, EpochenLevel bleibt erhalten"
+            : `Ab ${formatKnowledge(formulas.firstCoreKnowledgeThreshold())} Wissen in dieser Epoche verfügbar`
+        }
+      >
+        🌟 Kern-Prestige {miniEligible ? `(+${formatKnowledge(cores)})` : ""}
+      </button>
+
       {confirming && (
         <ConfirmDialog
           title="Epoche zurücksetzen?"
@@ -67,6 +85,21 @@ export function EpochPanel({ player, onPrestige }: EpochPanelProps) {
             onPrestige();
           }}
           onCancel={() => setConfirming(false)}
+        />
+      )}
+
+      {confirmingMini && (
+        <ConfirmDialog
+          title="Kern-Prestige durchführen?"
+          description={`Wissen und alle Gebäude der aktuellen Epoche werden auf 0 zurückgesetzt (das setzt auch den Fortschritt zur nächsten Epoche zurück). Du erhältst sofort 🌟 ${formatKnowledge(
+            cores,
+          )} neue Kerne. EpochenLevel, Karten, Achievements und Kern-Upgrades bleiben erhalten.`}
+          confirmLabel="Zurücksetzen"
+          onConfirm={() => {
+            setConfirmingMini(false);
+            onMiniPrestige();
+          }}
+          onCancel={() => setConfirmingMini(false)}
         />
       )}
     </div>

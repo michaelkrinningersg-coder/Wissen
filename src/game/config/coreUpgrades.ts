@@ -152,7 +152,3 @@ export function isCoreUpgradeAvailable(upgradeId: string, purchased: string[]): 
   if (!def.requires) return true;
   return def.requires.every((r) => purchased.includes(r));
 }
-
-export function isCoreShopFullyPurchased(purchased: string[]): boolean {
-  return CORE_UPGRADES.every((u) => purchased.includes(u.id));
-}

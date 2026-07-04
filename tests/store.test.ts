@@ -143,6 +143,38 @@ describe("game store", () => {
     expect(player.prestigeCount).toBe(1);
   });
 
+  it("miniPrestige() is blocked below the first-core threshold", () => {
+    const { actions } = useGameStore.getState();
+    useGameStore.setState((s) => ({
+      player: { ...s.player, knowledgeEarnedThisRun: s.player.knowledgeEarnedThisRun.plus(1_000) },
+    }));
+    actions.miniPrestige();
+    const { player } = useGameStore.getState();
+    expect(player.miniPrestigeCount).toBe(0);
+    expect(player.intelligenceCores.toNumber()).toBe(0);
+  });
+
+  it("miniPrestige() resets knowledge/buildings and awards cores without touching epochenLevel", () => {
+    const { actions } = useGameStore.getState();
+    useGameStore.setState((s) => ({
+      player: {
+        ...s.player,
+        knowledge: s.player.knowledge.plus(500_000),
+        knowledgeEarnedThisRun: s.player.knowledgeEarnedThisRun.plus(4_000_000), // floor(sqrt(4e6/1e6)) = 2 Kerne
+        buildings: { ...s.player.buildings, e1_buecher: { owned: 10 } },
+      },
+    }));
+    actions.miniPrestige();
+    const { player } = useGameStore.getState();
+    expect(player.knowledge.toNumber()).toBe(0);
+    expect(player.knowledgeEarnedThisRun.toNumber()).toBe(0);
+    expect(player.buildings["e1_buecher"].owned).toBe(0);
+    expect(player.epochenLevel).toBe(0);
+    expect(player.prestigeCount).toBe(0);
+    expect(player.miniPrestigeCount).toBe(1);
+    expect(player.intelligenceCores.toNumber()).toBe(2);
+  });
+
   it("achievements unlock automatically once a metric threshold is crossed", () => {
     const { actions } = useGameStore.getState();
     useGameStore.setState((s) => ({

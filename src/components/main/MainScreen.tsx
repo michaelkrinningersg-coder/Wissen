@@ -14,13 +14,14 @@ interface MainScreenProps {
   onBuy: (id: string) => void;
   onUnlockCombo: (id: string) => void;
   onPrestige: () => void;
+  onMiniPrestige: () => void;
 }
 
 // Desktop-Layout, volle Bildschirmbreite: links kompakte Sidebar mit
 // Wissensquellen-Upgrades, mittig (breit) der Klick-Button mit dem
 // Epochen-/Prestige-Weg darunter, rechts die Wissensquellen als
 // durchgehende Sidebar-Liste.
-export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }: MainScreenProps) {
+export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige, onMiniPrestige }: MainScreenProps) {
   const kps = formulas.knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
   const clickValue = formulas.clickValue(player, kps);
 
@@ -33,7 +34,7 @@ export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }
       <div className="main-col main-col-click">
         <ClickButton onClick={onClick} clickValueLabel={formatKnowledge(clickValue)} />
         <ComboBuildingsPanel player={player} onUnlock={onUnlockCombo} />
-        <EpochPanel player={player} onPrestige={onPrestige} />
+        <EpochPanel player={player} onPrestige={onPrestige} onMiniPrestige={onMiniPrestige} />
       </div>
 
       <div className="main-col main-col-buildings">

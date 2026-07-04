@@ -1,7 +1,6 @@
 import type { Decimal } from "../../game/decimal";
 import type { Player } from "../../game/types";
 import { formatInt, formatKnowledge, formatPercent, formatWissenProSekunde } from "../../game/format";
-import { isCoreShopFullyPurchased } from "../../game/config/coreUpgrades";
 import { passiveCoreBonusRate } from "../../game/formulas";
 
 interface ResourceBarProps {
@@ -10,7 +9,7 @@ interface ResourceBarProps {
 }
 
 export function ResourceBar({ player, kps }: ResourceBarProps) {
-  const showCoreBonus = player.intelligenceCores.gt(0) && isCoreShopFullyPurchased(player.coreUpgrades);
+  const showCoreBonus = player.intelligenceCores.gt(0);
 
   return (
     <div className="resource-grid">

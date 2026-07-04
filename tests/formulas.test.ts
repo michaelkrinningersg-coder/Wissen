@@ -9,6 +9,7 @@ import {
   buildingLocalMultiplier,
   buildingMilestoneMultiplier,
   buildingProduction,
+  canMiniPrestige,
   canPrestige,
   cardGearMultiplier,
   clickValue,
@@ -18,6 +19,7 @@ import {
   knowledgePerSecond,
   maxAffordable,
   passiveCoreBonusRate,
+  prestigeBonus,
   prestigeMinKnowledge,
   wissensquellenUpgradeClickPercent,
 } from "../src/game/formulas";
@@ -258,5 +260,24 @@ describe("passiveCoreBonusRate", () => {
       PASSIVE_CORE_BONUS_PER_CORE_BASE + 3 * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT,
       6,
     );
+  });
+});
+
+describe("prestigeBonus", () => {
+  it("applies the per-core bonus live to every currently held (unspent) core", () => {
+    const player = createInitialPlayer();
+    expect(prestigeBonus(player).toNumber()).toBeCloseTo(1, 6);
+    player.intelligenceCores = new Decimal(5);
+    expect(prestigeBonus(player).toNumber()).toBeCloseTo(1 + 5 * passiveCoreBonusRate(player), 6);
+  });
+});
+
+describe("canMiniPrestige", () => {
+  it("is eligible exactly once the first-core threshold is reached, independent of the epoch prestige minimum", () => {
+    const player = createInitialPlayer();
+    player.knowledgeEarnedThisRun = firstCoreKnowledgeThreshold().minus(1);
+    expect(canMiniPrestige(player)).toBe(false);
+    player.knowledgeEarnedThisRun = firstCoreKnowledgeThreshold();
+    expect(canMiniPrestige(player)).toBe(true);
   });
 });

@@ -596,6 +596,11 @@ button {
   padding: 0.5rem 0.9rem;
 }
 
+.button-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

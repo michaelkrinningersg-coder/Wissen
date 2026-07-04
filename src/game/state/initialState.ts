@@ -39,6 +39,7 @@ export function createInitialPlayer(): Player {
     playtimeByEpoch: { 1: 0 },
 
     prestigeCount: 0,
+    miniPrestigeCount: 0,
     epoch5LoopCount: 0,
     epochCompletionTimes: {},
     currentEpochStartedAt: 0,

@@ -179,19 +179,30 @@ export function canPrestige(player: Player): boolean {
 }
 
 /** Ab wie viel generiertem Wissen der allererste Intelligenz-Kern abfällt:
- * floor(sqrt(x / Divisor)) >= 1  <=>  x >= Divisor. */
+ * floor(sqrt(x / Divisor)) >= 1  <=>  x >= Divisor. Dient auch als feste
+ * Schwelle für das (kleine) Kern-Prestige, das unabhängig vom großen
+ * Epochen-Prestige schon viel früher nutzbar ist. */
 export function firstCoreKnowledgeThreshold(): Decimal {
   return new Decimal(PRESTIGE_CORE_DIVISOR);
 }
 
-/** Bonus je ungenutztem Kern (sobald Kern-Shop komplett ausgebaut ist):
- * Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement. */
+/** Kern-Prestige: setzt Wissen/Gebäude in der aktuellen Epoche zurück und
+ * gibt sofort Kerne, ohne EpochenLevel/EpochenBonus zu verändern – nutzbar
+ * sobald genug Wissen für mindestens einen Kern generiert wurde. */
+export function canMiniPrestige(player: Player): boolean {
+  return player.knowledgeEarnedThisRun.gte(firstCoreKnowledgeThreshold());
+}
+
+/** Bonus je ungenutztem (nicht in Kern-Shop-Upgrades investiertem) Kern:
+ * gilt sofort und live für jeden aktuell im Guthaben befindlichen Kern,
+ * Rate = Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement. */
 export function passiveCoreBonusRate(player: Player): number {
   return PASSIVE_CORE_BONUS_PER_CORE_BASE + player.achievements.length * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT;
 }
 
 export function prestigeBonus(player: Player): Decimal {
-  let bonus = 1 + player.passiveCoreBonusPercent;
+  let bonus =
+    1 + player.passiveCoreBonusPercent + player.intelligenceCores.toNumber() * passiveCoreBonusRate(player);
   for (const upgradeId of player.coreUpgrades) {
     const def = CORE_UPGRADES_BY_ID[upgradeId];
     if ((def?.category === "global" || def?.category === "efficiency") && def.effectPercent) {
