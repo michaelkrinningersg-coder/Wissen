@@ -10,6 +10,7 @@ import {
   buildingMilestoneMultiplier,
   buildingProduction,
   buildingScalingBonus,
+  buildingScalingBreakdown,
   canMiniPrestige,
   canPrestige,
   cardGearMultiplier,
@@ -122,6 +123,23 @@ describe("buildingScalingBonus", () => {
 
     expect(buildingScalingBonus("e1_hoehlenzeichnungen", player)).toBeCloseTo(10 * 0.01 + 25 * 0.001, 6);
     expect(buildingScalingBonus("e1_buecher", player)).toBeCloseTo(20 * 0.01 + 15 * 0.001, 6);
+  });
+
+  it("buildingScalingBreakdown exposes the owned counts behind each part of the bonus", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 10 };
+    player.buildings["e1_buecher"] = { owned: 20 };
+    player.buildings["e2_labore"] = { owned: 5 };
+
+    const breakdown = buildingScalingBreakdown("e1_hoehlenzeichnungen", player);
+    expect(breakdown.ownedSelf).toBe(10);
+    expect(breakdown.ownedOthers).toBe(25);
+    expect(breakdown.selfBonus).toBeCloseTo(0.1, 6);
+    expect(breakdown.crossBonus).toBeCloseTo(0.025, 6);
+    expect(breakdown.selfBonus + breakdown.crossBonus).toBeCloseTo(
+      buildingScalingBonus("e1_hoehlenzeichnungen", player),
+      6,
+    );
   });
 
   it("multiplies categories (epoch/prestige/global-block/event) rather than adding them", () => {

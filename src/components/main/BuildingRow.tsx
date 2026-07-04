@@ -14,9 +14,10 @@ export function BuildingRow({ def, player, onBuy }: BuildingRowProps) {
   const canAfford = player.knowledge.gte(cost);
   const isClickBuilding = Boolean(def.clickBonusPerUnit);
 
+  const perUnitBase = def.clickBonusPerUnit ?? def.baseProduction;
+  const rawBase = perUnitBase.times(owned);
   const contribution = isClickBuilding
-    ? (def.clickBonusPerUnit ?? formulas.buildingProduction(def.id, player))
-        .times(owned)
+    ? rawBase
         .times(formulas.buildingLocalMultiplier(def.id, player))
         .times(formulas.buildingMilestoneMultiplier(owned))
     : formulas.buildingProduction(def.id, player);
@@ -24,10 +25,17 @@ export function BuildingRow({ def, player, onBuy }: BuildingRowProps) {
     ? formulas.baseClickValue(player)
     : formulas.totalBaseProduction(player);
   const share = total.gt(0) ? contribution.div(total).toNumber() : 0;
+  const scaling = formulas.buildingScalingBreakdown(def.id, player);
+  const unit = isClickBuilding ? "Wissen/Klick" : "Wissen/Sek.";
 
-  const tooltip = isClickBuilding
-    ? `+${formatWissenProSekunde(contribution)} Wissen/Klick (${formatPercent(share)} des gesamten Wissen/Klick)`
-    : `${formatWissenProSekunde(contribution)} Wissen/Sek. (${formatPercent(share)} des gesamten Wissen/Sekunde)`;
+  const tooltip = [
+    isClickBuilding
+      ? `+${formatWissenProSekunde(contribution)} Wissen/Klick (${formatPercent(share)} des gesamten Wissen/Klick)`
+      : `${formatWissenProSekunde(contribution)} Wissen/Sek. (${formatPercent(share)} des gesamten Wissen/Sekunde)`,
+    `Basisverdienst: ${formatWissenProSekunde(rawBase)} ${unit} (ohne Boni)`,
+    `+${formatPercent(scaling.crossBonus)} durch Wissensquellen gesamt (${formatInt(scaling.ownedOthers)} andere Einheiten)`,
+    `+${formatPercent(scaling.selfBonus)} durch Wissensquellen des gleichen Typs (${formatInt(scaling.ownedSelf)} Einheiten)`,
+  ].join("\n");
 
   return (
     <button

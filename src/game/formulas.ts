@@ -98,18 +98,35 @@ export function comboBonus(buildingId: string, player: Player): number {
   return bonus;
 }
 
+export interface BuildingScalingBreakdown {
+  ownedSelf: number;
+  ownedOthers: number;
+  selfBonus: number; // Anteil aus eigenem Typ, z.B. 1 = +100%
+  crossBonus: number; // Anteil aus allen anderen Typen, z.B. 0.03 = +3%
+}
+
 /** Basisverdienst-Skalierung: eigene Anzahl zählt stark (z.B. 100
  * Höhlenzeichnungen -> +100%), jede andere besessene Wissensquelle
  * (unabhängig vom Typ) zählt schwächer. Gilt für alle Gebäude gleich,
  * inklusive solcher, die statt Wissen/Sek. den Klickwert erhöhen. */
-export function buildingScalingBonus(buildingId: string, player: Player): number {
+export function buildingScalingBreakdown(buildingId: string, player: Player): BuildingScalingBreakdown {
   const ownedSelf = ownedCount(player, buildingId);
   let ownedOthers = 0;
   for (const b of BUILDINGS) {
     if (b.id === buildingId) continue;
     ownedOthers += ownedCount(player, b.id);
   }
-  return ownedSelf * BUILDING_SELF_SCALING_FACTOR + ownedOthers * BUILDING_CROSS_SCALING_FACTOR;
+  return {
+    ownedSelf,
+    ownedOthers,
+    selfBonus: ownedSelf * BUILDING_SELF_SCALING_FACTOR,
+    crossBonus: ownedOthers * BUILDING_CROSS_SCALING_FACTOR,
+  };
+}
+
+export function buildingScalingBonus(buildingId: string, player: Player): number {
+  const { selfBonus, crossBonus } = buildingScalingBreakdown(buildingId, player);
+  return selfBonus + crossBonus;
 }
 
 export function buildingLocalMultiplier(buildingId: string, player: Player): number {
