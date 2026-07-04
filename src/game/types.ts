@@ -102,12 +102,9 @@ export interface ActiveEventState {
   expiresAt: number; // playtimeSeconds timestamp
 }
 
-export interface ActiveCardSpawnState {
-  cardPoolSnapshot: string[]; // candidate card ids at spawn time (for the guaranteed-drop roll)
-  spawnedAt: number; // playtimeSeconds timestamp
-  expiresAt: number;
-  x: number; // 0-100, percentage position on screen
-  y: number; // 0-100
+export interface LastCardDropState {
+  cardId: string;
+  at: number; // playtimeSeconds timestamp, for the drop toast display window
 }
 
 export interface KpsHistoryPoint {
@@ -132,8 +129,7 @@ export interface Player {
   comboBuildingsOwned: string[];
 
   cards: Record<string, CardState>;
-  activeCardSpawn: ActiveCardSpawnState | null;
-  nextCardSpawnIn: number;
+  lastCardDrop: LastCardDropState | null;
   activeCardBuffExpiresAt: number;
   activeCardBuffMultiplier: number;
 

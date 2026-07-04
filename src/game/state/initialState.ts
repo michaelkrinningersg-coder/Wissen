@@ -21,8 +21,7 @@ export function createInitialPlayer(): Player {
     comboBuildingsOwned: [],
 
     cards: {},
-    activeCardSpawn: null,
-    nextCardSpawnIn: 60,
+    lastCardDrop: null,
     activeCardBuffExpiresAt: 0,
     activeCardBuffMultiplier: 1,
 
