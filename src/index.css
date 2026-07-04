@@ -296,34 +296,6 @@ button {
   gap: 0.4rem;
 }
 
-.buy-amount-control {
-  display: flex;
-  gap: 0.25rem;
-  overflow-x: auto;
-  margin-bottom: 0.5rem;
-}
-
-.buy-amount-control button {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  border-radius: 6px;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.buy-amount-control button.active {
-  border-color: var(--accent);
-  color: var(--text);
-  background: var(--bg-elevated);
-}
-
-.buy-amount-control button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
 .building-list {
   display: flex;
   flex-direction: column;
@@ -331,6 +303,7 @@ button {
 }
 
 .building-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -341,11 +314,19 @@ button {
   text-align: left;
   color: var(--text);
   width: 100%;
+  min-height: 68px;
+  overflow: hidden;
 }
 
 .building-row:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.building-row.has-image {
+  background-size: cover;
+  background-position: center;
+  padding: 0;
 }
 
 .building-row .icon {
@@ -355,40 +336,49 @@ button {
   flex-shrink: 0;
 }
 
-.building-thumb {
-  width: 96px;
-  height: 48px;
-  object-fit: cover;
-  border-radius: 8px;
-  flex-shrink: 0;
-  border: 1px solid var(--border);
-}
-
 .building-row .info {
   flex: 1;
   min-width: 0;
 }
 
-.building-row .name-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+.building-row:not(.has-image) .info {
   font-weight: 600;
-  flex-wrap: wrap;
-}
-
-.building-row .sub-row {
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
 }
 
 .building-row .cost-col {
   text-align: right;
   flex-shrink: 0;
   font-size: 0.85rem;
+}
+
+.building-row-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0) 100%);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.building-row:not(.has-image) .building-row-overlay {
+  position: static;
+  inset: auto;
+  background: none;
+  margin-left: auto;
+  text-align: right;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.building-row.has-image .building-row-count,
+.building-row.has-image .building-row-cost {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .bonus-badge {

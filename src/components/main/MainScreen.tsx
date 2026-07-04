@@ -1,11 +1,8 @@
-import { useState } from "react";
 import type { Player } from "../../game/types";
-import type { BuyAmount } from "../../game/state/store";
 import * as formulas from "../../game/formulas";
 import { ACHIEVEMENTS_BY_ID } from "../../game/config/achievements";
 import { formatKnowledge } from "../../game/format";
 import { ClickButton } from "./ClickButton";
-import { BuyAmountControl } from "./BuyAmountControl";
 import { BuildingList } from "./BuildingList";
 import { ComboBuildingsPanel } from "./ComboBuildingsPanel";
 import { EpochPanel } from "./EpochPanel";
@@ -14,7 +11,7 @@ import { WissensquellenUpgradesPanel } from "./WissensquellenUpgradesPanel";
 interface MainScreenProps {
   player: Player;
   onClick: () => void;
-  onBuy: (id: string, amount: BuyAmount) => void;
+  onBuy: (id: string) => void;
   onUnlockCombo: (id: string) => void;
   onPrestige: () => void;
 }
@@ -24,10 +21,8 @@ interface MainScreenProps {
 // Epochen-/Prestige-Weg darunter, rechts die Wissensquellen als
 // durchgehende Sidebar-Liste.
 export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }: MainScreenProps) {
-  const [buyAmount, setBuyAmount] = useState<BuyAmount>(1);
   const kps = formulas.knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
   const clickValue = formulas.clickValue(player, kps);
-  const buyXUnlocked = player.coreUpgrades.includes("core_automation_buyx");
 
   return (
     <div className="main-layout">
@@ -45,8 +40,7 @@ export function MainScreen({ player, onClick, onBuy, onUnlockCombo, onPrestige }
         <div className="section-title" style={{ marginTop: 0 }}>
           🏗️ Wissensquellen
         </div>
-        <BuyAmountControl value={buyAmount} onChange={setBuyAmount} unlocked={buyXUnlocked} />
-        <BuildingList player={player} buyAmount={buyAmount} onBuy={(id) => onBuy(id, buyAmount)} />
+        <BuildingList player={player} onBuy={onBuy} />
       </div>
     </div>
   );

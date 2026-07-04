@@ -93,7 +93,7 @@ function App() {
           <MainScreen
             player={player}
             onClick={() => withRefresh(actions.click)}
-            onBuy={(id, amount) => withRefresh(() => actions.buyBuilding(id, amount))}
+            onBuy={(id) => withRefresh(() => actions.buyBuilding(id, 1))}
             onUnlockCombo={(id) => withRefresh(() => actions.unlockComboBuilding(id))}
             onPrestige={() => withRefresh(actions.prestige)}
           />
