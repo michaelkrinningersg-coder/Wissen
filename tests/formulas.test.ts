@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Decimal } from "../src/game/decimal";
 import { createInitialPlayer } from "../src/game/state/initialState";
 import { BUILDINGS_BY_ID } from "../src/game/config/buildings";
+import { CARDS_BY_ID } from "../src/game/config/cards";
 import {
   baseClickValue,
   batchCost,
@@ -14,6 +15,9 @@ import {
   canMiniPrestige,
   canPrestige,
   cardGearMultiplier,
+  cardSpawnChance,
+  cardsBonus,
+  cardsClickBonus,
   clickValue,
   coresAwarded,
   epochenBonus,
@@ -210,6 +214,50 @@ describe("cardGearMultiplier", () => {
     expect(cardGearMultiplier(50)).toBe(1.3);
     expect(cardGearMultiplier(100)).toBe(1.5);
     expect(cardGearMultiplier(1000)).toBe(1.5);
+  });
+
+  it("uses a card's own gearThresholds override instead of the default table when given", () => {
+    const custom = [{ copies: 2, multiplier: 1.2 }];
+    expect(cardGearMultiplier(1, custom)).toBe(1);
+    expect(cardGearMultiplier(2, custom)).toBe(1.2);
+    expect(cardGearMultiplier(9, custom)).toBe(1.2);
+    // ohne Override bleibt es beim Standard-Verhalten
+    expect(cardGearMultiplier(2)).toBe(1);
+  });
+});
+
+describe("Höhlenzeichnungen-Karten (Urzeit)", () => {
+  it("boost Wissen/Klick via cardsClickBonus/clickValue instead of the Wissen/Sek. cardsBonus", () => {
+    const player = createInitialPlayer();
+    player.cards["card_chauvet"] = { copies: 1, equipped: true };
+    expect(cardsBonus(player)).toBeCloseTo(0, 6);
+    expect(cardsClickBonus(player)).toBeCloseTo(0.1, 6); // 10% je Kopie, keine Ausrüstungsstufe erreicht
+
+    const kps = new Decimal(0);
+    const value = clickValue(player, kps);
+    expect(value.toNumber()).toBeCloseTo(CLICK_BASE_VALUE * 1.1, 6);
+  });
+
+  it("stack their own steep gear thresholds (2/10/25/50/100 Kopien) instead of the default table", () => {
+    const player = createInitialPlayer();
+    player.cards["card_chauvet"] = { copies: 2, equipped: true };
+    expect(cardsClickBonus(player)).toBeCloseTo(0.1 * 2 * 1.2, 6);
+
+    player.cards["card_chauvet"] = { copies: 10, equipped: true };
+    expect(cardsClickBonus(player)).toBeCloseTo(0.1 * 10 * 2, 6);
+  });
+
+  it("add a per-copy bonus to passiveCoreBonusRate via corePerCardBonusPercent", () => {
+    const player = createInitialPlayer();
+    const baseline = passiveCoreBonusRate(player);
+    player.cards["card_breuil"] = { copies: 1, equipped: true };
+    expect(passiveCoreBonusRate(player)).toBeCloseTo(baseline + 0.2, 6);
+  });
+
+  it("use a custom baseDropChance instead of the rarity-weighted default", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: CARDS_BY_ID["card_chauvet"].spawnThreshold };
+    expect(cardSpawnChance("card_chauvet", player)).toBeCloseTo(1 / 10_000, 9);
   });
 });
 

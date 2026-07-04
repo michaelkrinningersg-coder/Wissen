@@ -130,6 +130,17 @@ export const CARD_GEAR_THRESHOLDS: Array<{ copies: number; multiplier: number }>
   { copies: 100, multiplier: 1.5 },
 ];
 
+// Eigene, deutlich stärkere Ausrüstungs-Stufen für die Höhlenzeichnungen-
+// Karten (Urzeit): +20% bei 2 Kopien, danach verdoppelt sich der Bonus bei
+// 10/25/50/100 Kopien desselben Typs jeweils erneut.
+export const HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS: Array<{ copies: number; multiplier: number }> = [
+  { copies: 2, multiplier: 1.2 },
+  { copies: 10, multiplier: 2 },
+  { copies: 25, multiplier: 4 },
+  { copies: 50, multiplier: 8 },
+  { copies: 100, multiplier: 16 },
+];
+
 // Events
 export const EVENT_SPAWN_INTERVAL_MIN_S = 180;
 export const EVENT_SPAWN_INTERVAL_MAX_S = 420;

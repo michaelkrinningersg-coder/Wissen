@@ -1,4 +1,5 @@
 import type { CardDef } from "../types";
+import { HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS } from "./constants";
 
 /**
  * Gelehrten-Karten "Gelehrte der Geschichte" (Abschnitt 13). Ausschließlich
@@ -8,6 +9,63 @@ import type { CardDef } from "../types";
  * gepflegt, leicht nachjustierbar.
  */
 export const CARDS: CardDef[] = [
+  // Urzeit: einzige Karten, die an Höhlenzeichnungen (reine Klick-
+  // Wissensquelle) gebunden sind — ihr baseBoostPercent wirkt daher auf
+  // Wissen/Klick statt Wissen/Sek., zusätzlich geben sie einen eigenen
+  // Bonus je Kern und nutzen ihre eigene, viel steilere Ausrüstungs-Kurve.
+  {
+    id: "card_breuil",
+    name: "Henri Breuil",
+    era: "Urzeit",
+    icon: "🖌️",
+    rarity: "epic",
+    linkedBuildingId: "e1_hoehlenzeichnungen",
+    spawnThreshold: 25,
+    baseBoostPercent: 0.5,
+    baseDropChance: 1 / 1_500_000,
+    corePerCardBonusPercent: 0.2,
+    gearThresholds: HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS,
+  },
+  {
+    id: "card_sautuola",
+    name: "Marcelino Sanz de Sautuola",
+    era: "Urzeit",
+    icon: "🦴",
+    rarity: "legendary",
+    linkedBuildingId: "e1_hoehlenzeichnungen",
+    spawnThreshold: 25,
+    baseBoostPercent: 0.25,
+    baseDropChance: 1 / 250_000,
+    corePerCardBonusPercent: 0.025,
+    gearThresholds: HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS,
+  },
+  {
+    id: "card_cartailhac",
+    name: "Émile Cartailhac",
+    era: "Urzeit",
+    icon: "📜",
+    rarity: "rare",
+    linkedBuildingId: "e1_hoehlenzeichnungen",
+    spawnThreshold: 25,
+    baseBoostPercent: 0.15,
+    baseDropChance: 1 / 50_000,
+    corePerCardBonusPercent: 0.005,
+    gearThresholds: HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS,
+  },
+  {
+    id: "card_chauvet",
+    name: "Jean-Marie Chauvet",
+    era: "Urzeit",
+    icon: "🕯️",
+    rarity: "common",
+    linkedBuildingId: "e1_hoehlenzeichnungen",
+    spawnThreshold: 25,
+    baseBoostPercent: 0.1,
+    baseDropChance: 1 / 10_000,
+    corePerCardBonusPercent: 0.001,
+    gearThresholds: HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS,
+  },
+
   // Antike
   { id: "card_aristoteles", name: "Aristoteles", era: "Antike", icon: "🏺", rarity: "epic", linkedBuildingId: "e1_philosophenzirkel", spawnThreshold: 25, baseBoostPercent: 0.02 },
   { id: "card_euklid", name: "Euklid", era: "Antike", icon: "📐", rarity: "common", linkedBuildingId: "e1_buecher", spawnThreshold: 25, baseBoostPercent: 0.005 },

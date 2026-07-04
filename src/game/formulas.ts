@@ -229,9 +229,16 @@ export function canMiniPrestige(player: Player): boolean {
 
 /** Bonus je ungenutztem (nicht in Kern-Shop-Upgrades investiertem) Kern:
  * gilt sofort und live für jeden aktuell im Guthaben befindlichen Kern,
- * Rate = Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement. */
+ * Rate = Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement +
+ * Zuschlag durch Karten mit eigenem Kern-Bonus (z.B. Höhlenzeichnungen-Karten). */
 export function passiveCoreBonusRate(player: Player): number {
-  return PASSIVE_CORE_BONUS_PER_CORE_BASE + player.achievements.length * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT;
+  let rate = PASSIVE_CORE_BONUS_PER_CORE_BASE + player.achievements.length * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT;
+  for (const [cardId, state] of Object.entries(player.cards)) {
+    const def = CARDS_BY_ID[cardId];
+    if (!def?.corePerCardBonusPercent || state.copies <= 0) continue;
+    rate += state.copies * def.corePerCardBonusPercent * cardGearMultiplier(state.copies, def.gearThresholds);
+  }
+  return rate;
 }
 
 export function prestigeBonus(player: Player): Decimal {
@@ -273,12 +280,22 @@ export function massBonus(player: Player): number {
   return Math.sqrt(total) * MASS_FACTOR;
 }
 
-export function cardGearMultiplier(copies: number): number {
+export function cardGearMultiplier(
+  copies: number,
+  thresholds: Array<{ copies: number; multiplier: number }> = CARD_GEAR_THRESHOLDS,
+): number {
   let multiplier = 1;
-  for (const tier of CARD_GEAR_THRESHOLDS) {
+  for (const tier of thresholds) {
     if (copies >= tier.copies) multiplier = tier.multiplier;
   }
   return multiplier;
+}
+
+/** Karten, deren verknüpftes Gebäude statt Wissen/Sek. den Klickwert erhöht
+ * (aktuell nur Höhlenzeichnungen), boosten Wissen/Klick statt Wissen/Sek. —
+ * siehe cardsClickBonus(). */
+function isClickLinkedCard(linkedBuildingId: string): boolean {
+  return Boolean(BUILDINGS_BY_ID[linkedBuildingId]?.clickBonusPerUnit);
 }
 
 /** Ausrüstungs-Multiplikator wird automatisch ab den Kopie-Schwellen angewendet (Abschnitt 13). */
@@ -286,8 +303,20 @@ export function cardsBonus(player: Player): number {
   let bonus = 0;
   for (const [cardId, state] of Object.entries(player.cards)) {
     const def = CARDS_BY_ID[cardId];
-    if (!def || state.copies <= 0) continue;
-    bonus += state.copies * def.baseBoostPercent * cardGearMultiplier(state.copies);
+    if (!def || state.copies <= 0 || isClickLinkedCard(def.linkedBuildingId)) continue;
+    bonus += state.copies * def.baseBoostPercent * cardGearMultiplier(state.copies, def.gearThresholds);
+  }
+  return bonus;
+}
+
+/** Analog zu cardsBonus(), aber für Karten, die an eine Klick-Wissensquelle
+ * gebunden sind (z.B. Höhlenzeichnungen-Karten) — wirkt auf Wissen/Klick. */
+export function cardsClickBonus(player: Player): number {
+  let bonus = 0;
+  for (const [cardId, state] of Object.entries(player.cards)) {
+    const def = CARDS_BY_ID[cardId];
+    if (!def || state.copies <= 0 || !isClickLinkedCard(def.linkedBuildingId)) continue;
+    bonus += state.copies * def.baseBoostPercent * cardGearMultiplier(state.copies, def.gearThresholds);
   }
   return bonus;
 }
@@ -379,7 +408,7 @@ export function wissensquellenUpgradeClickPercent(player: Player): number {
 }
 
 export function clickValue(player: Player, kps: Decimal): Decimal {
-  const base = baseClickValue(player).times(1 + clickUpgradeBonus(player));
+  const base = baseClickValue(player).times(1 + clickUpgradeBonus(player) + cardsClickBonus(player));
   const wqBonus = kps.times(wissensquellenUpgradeClickPercent(player));
   const buffMultiplier = player.activeCardBuffMultiplier > 0 ? player.activeCardBuffMultiplier : 1;
   return base.plus(wqBonus).times(clickEventMultiplier(player)).times(buffMultiplier);
@@ -396,9 +425,9 @@ export function cardSpawnChance(cardId: string, player: Player): number {
   if (!def) return 0;
   const owned = ownedCount(player, def.linkedBuildingId);
   if (owned < def.spawnThreshold) return 0;
-  const rarityWeight = RARITY_TABLE[def.rarity].chanceWeight;
+  const baseChance = def.baseDropChance ?? CARD_CLICK_DROP_BASE_CHANCE * RARITY_TABLE[def.rarity].chanceWeight;
   const over = owned - def.spawnThreshold;
-  const chance = CARD_CLICK_DROP_BASE_CHANCE * rarityWeight * (1 + Math.log(1 + over) * CARD_DROP_LOG_SCALE);
+  const chance = baseChance * (1 + Math.log(1 + over) * CARD_DROP_LOG_SCALE);
   return Math.min(chance, CARD_DROP_CHANCE_CEILING);
 }
 
