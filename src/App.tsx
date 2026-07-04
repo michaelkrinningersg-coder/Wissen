@@ -15,7 +15,7 @@ import { CardsScreen } from "./components/cards/CardsScreen";
 import { AchievementsScreen } from "./components/achievements/AchievementsScreen";
 import { StatsScreen } from "./components/stats/StatsScreen";
 import { EventBanner } from "./components/events/EventBanner";
-import { CardSpawnOverlay } from "./components/cards/CardSpawnOverlay";
+import { CardDropToast } from "./components/cards/CardDropToast";
 import * as formulas from "./game/formulas";
 import { ACHIEVEMENTS_BY_ID } from "./game/config/achievements";
 
@@ -79,8 +79,10 @@ function App() {
     refresh();
   };
 
+  const epoch = formulas.currentEpochNumber(player.epochenLevel);
+
   return (
-    <div className="app">
+    <div className="app" data-epoch={epoch}>
       <header className="app-header">
         <EventBanner player={player} />
         <ResourceBar player={player} kps={kps} />
@@ -113,7 +115,7 @@ function App() {
         )}
       </main>
 
-      <CardSpawnOverlay player={player} onCollect={() => withRefresh(actions.collectCardSpawn)} />
+      <CardDropToast player={player} />
 
       <TabNav active={tab} onChange={setTab} />
 

@@ -38,15 +38,15 @@ export const MASS_FACTOR = 0.01; // 1% * sqrt(GesamtAnzahl)
 // Kern-Shop Überschuss
 export const PASSIVE_CORE_BONUS_PER_CORE = 0.01; // +1% WPS pro ungenutztem Kern
 
-// Karten
-export const CARD_SPAWN_INTERVAL_MIN_S = 90;
-export const CARD_SPAWN_INTERVAL_MAX_S = 240;
-export const CARD_SPAWN_VISIBLE_S = 15;
+// Karten: Dropchance wird bei jedem Klick auf den Wissen-Button geprüft,
+// unabhängig je Wissensquelle (nicht je Epoche) — Basis 1:1.000.000 Klicks
+// pro Karte, danach je nach Seltenheit/Gebäudeanzahl skaliert (siehe formulas.ts).
 export const CARD_BUFF_DURATION_S = 30;
-export const CARD_BUFF_MULTIPLIER = 5; // temporärer WPS-Boost beim Anklicken
-export const CARD_BASE_DROP_RATE = 0.15; // Basis-Chance, dass der Klick überhaupt eine Karte droppt
+export const CARD_BUFF_MULTIPLIER = 5; // temporärer WPS-Boost bei erfolgreichem Kartenfund
+export const CARD_CLICK_DROP_BASE_CHANCE = 1 / 1_000_000;
 export const CARD_DROP_LOG_SCALE = 0.15;
 export const CARD_DROP_CHANCE_CEILING = 0.6;
+export const CARD_DROP_TOAST_DURATION_S = 4;
 
 // Alle *Percent/*Bonus-Werte im Code sind fraktional (0.05 = 5%), damit sie
 // direkt additiv in "1 + bonus" einfließen können.

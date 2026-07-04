@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ZERO } from "../decimal";
-import type { ActiveCardSpawnState, Player } from "../types";
+import type { Player } from "../types";
 import { createInitialPlayer } from "./initialState";
 import { BUILDINGS, BUILDINGS_BY_ID } from "../config/buildings";
 import { COMBO_BUILDINGS_BY_ID } from "../config/comboBuildings";
@@ -12,9 +12,6 @@ import { evaluateAchievements } from "../engine/achievements";
 import {
   CARD_BUFF_DURATION_S,
   CARD_BUFF_MULTIPLIER,
-  CARD_SPAWN_INTERVAL_MAX_S,
-  CARD_SPAWN_INTERVAL_MIN_S,
-  CARD_SPAWN_VISIBLE_S,
   CLICK_TIMESTAMP_WINDOW_S,
   EVENT_SPAWN_INTERVAL_MAX_S,
   EVENT_SPAWN_INTERVAL_MIN_S,
@@ -39,6 +36,32 @@ function applyAchievements(player: Player): Player {
   };
 }
 
+/** Karten-Dropchance bei jedem Klick auf den Wissen-Button (Abschnitt 13,
+ * überarbeitet): unabhängige Rolls je Wissensquelle, Basis 1:1.000.000. Ein
+ * Treffer gibt sofort eine Kopie + den temporären WPS-Buff. */
+function rollCardDrops(player: Player): Player {
+  let next = player;
+  let dropped = false;
+  for (const cardId of formulas.eligibleCardIds(player)) {
+    if (Math.random() >= formulas.cardSpawnChance(cardId, player)) continue;
+    const existing = next.cards[cardId] ?? { copies: 0, equipped: false };
+    next = {
+      ...next,
+      cards: { ...next.cards, [cardId]: { copies: existing.copies + 1, equipped: true } },
+      lastCardDrop: { cardId, at: player.playtimeSeconds },
+    };
+    dropped = true;
+  }
+  if (dropped) {
+    next = {
+      ...next,
+      activeCardBuffMultiplier: CARD_BUFF_MULTIPLIER,
+      activeCardBuffExpiresAt: player.playtimeSeconds + CARD_BUFF_DURATION_S,
+    };
+  }
+  return next;
+}
+
 interface GameStoreState {
   player: Player;
   actions: {
@@ -46,7 +69,6 @@ interface GameStoreState {
     buyBuilding: (buildingId: string, amount: BuyAmount) => void;
     purchaseCoreUpgrade: (upgradeId: string) => void;
     unlockComboBuilding: (comboId: string) => void;
-    collectCardSpawn: () => void;
     prestige: () => void;
     replacePlayer: (player: Player) => void;
     resetGame: () => void;
@@ -77,6 +99,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         clickTimestamps,
         peakClicksPerSecond: Math.max(player.peakClicksPerSecond, clicksPerSecond),
       };
+      next = rollCardDrops(next);
       next = applyAchievements(next);
       set({ player: next });
     },
@@ -139,46 +162,6 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
           comboBuildingsOwned: [...player.comboBuildingsOwned, comboId],
         },
       });
-    },
-
-    collectCardSpawn: () => {
-      const { player } = get();
-      const spawn = player.activeCardSpawn;
-      if (!spawn) return;
-      const now = player.playtimeSeconds;
-
-      let next: Player = {
-        ...player,
-        activeCardSpawn: null,
-        activeCardBuffMultiplier: CARD_BUFF_MULTIPLIER,
-        activeCardBuffExpiresAt: now + CARD_BUFF_DURATION_S,
-      };
-
-      const weighted = spawn.cardPoolSnapshot
-        .map((id) => ({ id, chance: formulas.cardSpawnChance(id, player) }))
-        .filter((w) => w.chance > 0);
-      const totalChance = weighted.reduce((sum, w) => sum + w.chance, 0);
-      if (totalChance > 0 && Math.random() < Math.min(totalChance, 1)) {
-        let roll = Math.random() * totalChance;
-        let chosen = weighted[0]?.id;
-        for (const w of weighted) {
-          if (roll < w.chance) {
-            chosen = w.id;
-            break;
-          }
-          roll -= w.chance;
-        }
-        if (chosen) {
-          const existing = next.cards[chosen] ?? { copies: 0, equipped: false };
-          next = {
-            ...next,
-            cards: { ...next.cards, [chosen]: { copies: existing.copies + 1, equipped: true } },
-          };
-        }
-      }
-
-      next = applyAchievements(next);
-      set({ player: next });
     },
 
     prestige: () => {
@@ -262,12 +245,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       const activeEvents = next.activeEvents.filter((e) => e.expiresAt > newPlaytime);
       if (activeEvents.length !== next.activeEvents.length) next = { ...next, activeEvents };
 
-      if (next.activeCardSpawn && next.activeCardSpawn.expiresAt <= newPlaytime) {
-        next = { ...next, activeCardSpawn: null };
-      }
-
       let nextEventSpawnIn = next.nextEventSpawnIn - dtSeconds;
-      let nextCardSpawnIn = next.nextCardSpawnIn - dtSeconds;
 
       if (nextEventSpawnIn <= 0 && next.activeEvents.length === 0) {
         const eventDef = GAME_EVENTS[Math.floor(Math.random() * GAME_EVENTS.length)];
@@ -281,20 +259,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         nextEventSpawnIn = randomBetween(EVENT_SPAWN_INTERVAL_MIN_S, EVENT_SPAWN_INTERVAL_MAX_S);
       }
 
-      if (nextCardSpawnIn <= 0 && !next.activeCardSpawn) {
-        const pool = formulas.eligibleCardIds(next);
-        const spawn: ActiveCardSpawnState = {
-          cardPoolSnapshot: pool,
-          spawnedAt: newPlaytime,
-          expiresAt: newPlaytime + CARD_SPAWN_VISIBLE_S,
-          x: 10 + Math.random() * 80,
-          y: 15 + Math.random() * 60,
-        };
-        next = { ...next, activeCardSpawn: spawn };
-        nextCardSpawnIn = randomBetween(CARD_SPAWN_INTERVAL_MIN_S, CARD_SPAWN_INTERVAL_MAX_S);
-      }
-
-      next = { ...next, nextEventSpawnIn, nextCardSpawnIn };
+      next = { ...next, nextEventSpawnIn };
 
       if (Math.floor(newPlaytime) > Math.floor(player.playtimeSeconds)) {
         // Auto-Buyer (Kern-Upgrade): kauft einmal pro Sekunde das günstigste

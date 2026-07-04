@@ -6,7 +6,7 @@ import { CORE_UPGRADES_BY_ID } from "./config/coreUpgrades";
 import { CARDS_BY_ID } from "./config/cards";
 import { AI_BUILDING_IDS, GAME_EVENTS_BY_ID } from "./config/events";
 import {
-  CARD_BASE_DROP_RATE,
+  CARD_CLICK_DROP_BASE_CHANCE,
   CARD_DROP_CHANCE_CEILING,
   CARD_DROP_LOG_SCALE,
   CARD_GEAR_THRESHOLDS,
@@ -273,7 +273,9 @@ export function clickValue(player: Player, kps: Decimal): Decimal {
 }
 
 // ---------------------------------------------------------------------------
-// Karten – Spawn-Chance
+// Karten – Dropchance pro Klick (Abschnitt 13, überarbeitet: je Wissensquelle
+// statt je Epoche, ausgelöst durch Klick auf den Wissen-Button statt durch
+// einen separaten Zufalls-Spawn. Basis 1:1.000.000 Klicks pro Karte.)
 // ---------------------------------------------------------------------------
 
 export function cardSpawnChance(cardId: string, player: Player): number {
@@ -283,7 +285,7 @@ export function cardSpawnChance(cardId: string, player: Player): number {
   if (owned < def.spawnThreshold) return 0;
   const rarityWeight = RARITY_TABLE[def.rarity].chanceWeight;
   const over = owned - def.spawnThreshold;
-  const chance = CARD_BASE_DROP_RATE * rarityWeight * (1 + Math.log(1 + over) * CARD_DROP_LOG_SCALE);
+  const chance = CARD_CLICK_DROP_BASE_CHANCE * rarityWeight * (1 + Math.log(1 + over) * CARD_DROP_LOG_SCALE);
   return Math.min(chance, CARD_DROP_CHANCE_CEILING);
 }
 

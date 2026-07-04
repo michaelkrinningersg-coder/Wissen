@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useGameStore } from "../src/game/state/store";
 import { createInitialPlayer } from "../src/game/state/initialState";
 import { toSaveShape, fromSaveShape } from "../src/game/persistence/save";
@@ -49,13 +49,39 @@ describe("game store", () => {
     expect(after2s.toNumber()).toBeGreaterThan(after1s.toNumber());
   });
 
-  it("tick() eventually spawns a random event and a card (long enough dt)", () => {
+  it("tick() eventually spawns a random event (long enough dt)", () => {
     const { actions } = useGameStore.getState();
-    // Ein einzelner riesiger Tick simuliert "viel Zeit vergeht" (Timer starten
-    // bei 60-120s Default, ein 500s-Tick muss beide auslösen).
+    // Ein einzelner riesiger Tick simuliert "viel Zeit vergeht" (Timer startet
+    // bei 60-120s Default, ein 500s-Tick muss ihn auslösen).
     actions.tick(500);
     const { player } = useGameStore.getState();
-    expect(player.activeEvents.length + (player.activeCardSpawn ? 1 : 0)).toBeGreaterThan(0);
+    expect(player.activeEvents.length).toBeGreaterThan(0);
+  });
+
+  it("click() can drop a card when the roll succeeds (Math.random forced to 0)", () => {
+    const { actions } = useGameStore.getState();
+    useGameStore.setState((s) => ({
+      player: {
+        ...s.player,
+        buildings: { ...s.player.buildings, e1_philosophenzirkel: { owned: 25 } },
+      },
+    }));
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    actions.click();
+    randomSpy.mockRestore();
+    const { player } = useGameStore.getState();
+    expect(player.cards["card_aristoteles"]?.copies).toBeGreaterThan(0);
+    expect(player.lastCardDrop?.cardId).toBe("card_aristoteles");
+    expect(player.activeCardBuffMultiplier).toBeGreaterThan(1);
+  });
+
+  it("click() does not drop a card below the linked building's spawn threshold", () => {
+    const { actions } = useGameStore.getState();
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    actions.click(); // e1_philosophenzirkel owned = 0, below threshold 25
+    randomSpy.mockRestore();
+    const { player } = useGameStore.getState();
+    expect(Object.keys(player.cards).length).toBe(0);
   });
 
   it("auto-clicker upgrade grants continuous passive knowledge without touching totalClicks", () => {

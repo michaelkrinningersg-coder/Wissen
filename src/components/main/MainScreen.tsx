@@ -23,12 +23,17 @@ export function MainScreen({ player, onClick, onBuy, onUnlockCombo }: MainScreen
   const buyXUnlocked = player.coreUpgrades.includes("core_automation_buyx");
 
   return (
-    <div>
-      <ClickButton onClick={onClick} clickValueLabel={formatKnowledge(clickValue)} />
-      <ComboBuildingsPanel player={player} onUnlock={onUnlockCombo} />
-      <div className="section-title">🏗️ Wissensquellen</div>
-      <BuyAmountControl value={buyAmount} onChange={setBuyAmount} unlocked={buyXUnlocked} />
-      <BuildingList player={player} buyAmount={buyAmount} onBuy={(id) => onBuy(id, buyAmount)} />
+    <div className="main-layout">
+      <div className="main-left">
+        <ClickButton onClick={onClick} clickValueLabel={formatKnowledge(clickValue)} />
+      </div>
+
+      <div className="main-right">
+        <ComboBuildingsPanel player={player} onUnlock={onUnlockCombo} />
+        <div className="section-title">🏗️ Wissensquellen</div>
+        <BuyAmountControl value={buyAmount} onChange={setBuyAmount} unlocked={buyXUnlocked} />
+        <BuildingList player={player} buyAmount={buyAmount} onBuy={(id) => onBuy(id, buyAmount)} />
+      </div>
     </div>
   );
 }
