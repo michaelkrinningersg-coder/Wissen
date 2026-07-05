@@ -6,7 +6,9 @@ import { CORE_UPGRADES_BY_ID } from "./config/coreUpgrades";
 import { CARDS_BY_ID } from "./config/cards";
 import { AI_BUILDING_IDS, GAME_EVENTS_BY_ID } from "./config/events";
 import {
+  BUILDING_CROSS_SCALING_FACTOR,
   BUILDING_MILESTONES,
+  BUILDING_SELF_SCALING_FACTOR,
   CARD_CLICK_DROP_BASE_CHANCE,
   CARD_DROP_CHANCE_CEILING,
   CARD_DROP_LOG_SCALE,
@@ -97,12 +99,44 @@ export function comboBonus(buildingId: string, player: Player): number {
   return bonus;
 }
 
+export interface BuildingScalingBreakdown {
+  ownedSelf: number;
+  ownedOthers: number;
+  selfBonus: number; // Anteil aus eigenem Typ, z.B. 1 = +100%
+  crossBonus: number; // Anteil aus allen anderen Typen, z.B. 0.03 = +3%
+}
+
+/** Basisverdienst-Skalierung: eigene Anzahl zählt stark (z.B. 100
+ * Höhlenzeichnungen -> +100%), jede andere besessene Wissensquelle
+ * (unabhängig vom Typ) zählt schwächer. Gilt für alle Gebäude gleich,
+ * inklusive solcher, die statt Wissen/Sek. den Klickwert erhöhen. */
+export function buildingScalingBreakdown(buildingId: string, player: Player): BuildingScalingBreakdown {
+  const ownedSelf = ownedCount(player, buildingId);
+  let ownedOthers = 0;
+  for (const b of BUILDINGS) {
+    if (b.id === buildingId) continue;
+    ownedOthers += ownedCount(player, b.id);
+  }
+  return {
+    ownedSelf,
+    ownedOthers,
+    selfBonus: ownedSelf * BUILDING_SELF_SCALING_FACTOR,
+    crossBonus: ownedOthers * BUILDING_CROSS_SCALING_FACTOR,
+  };
+}
+
+export function buildingScalingBonus(buildingId: string, player: Player): number {
+  const { selfBonus, crossBonus } = buildingScalingBreakdown(buildingId, player);
+  return selfBonus + crossBonus;
+}
+
 export function buildingLocalMultiplier(buildingId: string, player: Player): number {
   return (
     1 +
     synergyBonus(buildingId, player) +
     chainBonusFromPrevious(buildingId, player) +
-    comboBonus(buildingId, player)
+    comboBonus(buildingId, player) +
+    buildingScalingBonus(buildingId, player)
   );
 }
 
@@ -180,19 +214,37 @@ export function canPrestige(player: Player): boolean {
 }
 
 /** Ab wie viel generiertem Wissen der allererste Intelligenz-Kern abfällt:
- * floor(sqrt(x / Divisor)) >= 1  <=>  x >= Divisor. */
+ * floor(sqrt(x / Divisor)) >= 1  <=>  x >= Divisor. Dient auch als feste
+ * Schwelle für das (kleine) Kern-Prestige, das unabhängig vom großen
+ * Epochen-Prestige schon viel früher nutzbar ist. */
 export function firstCoreKnowledgeThreshold(): Decimal {
   return new Decimal(PRESTIGE_CORE_DIVISOR);
 }
 
-/** Bonus je ungenutztem Kern (sobald Kern-Shop komplett ausgebaut ist):
- * Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement. */
+/** Kern-Prestige: setzt Wissen/Gebäude in der aktuellen Epoche zurück und
+ * gibt sofort Kerne, ohne EpochenLevel/EpochenBonus zu verändern – nutzbar
+ * sobald genug Wissen für mindestens einen Kern generiert wurde. */
+export function canMiniPrestige(player: Player): boolean {
+  return player.knowledgeEarnedThisRun.gte(firstCoreKnowledgeThreshold());
+}
+
+/** Bonus je ungenutztem (nicht in Kern-Shop-Upgrades investiertem) Kern:
+ * gilt sofort und live für jeden aktuell im Guthaben befindlichen Kern,
+ * Rate = Basis-Rate + fester Zuschlag pro freigeschaltetem Achievement +
+ * Zuschlag durch Karten mit eigenem Kern-Bonus (z.B. Höhlenzeichnungen-Karten). */
 export function passiveCoreBonusRate(player: Player): number {
-  return PASSIVE_CORE_BONUS_PER_CORE_BASE + player.achievements.length * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT;
+  let rate = PASSIVE_CORE_BONUS_PER_CORE_BASE + player.achievements.length * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT;
+  for (const [cardId, state] of Object.entries(player.cards)) {
+    const def = CARDS_BY_ID[cardId];
+    if (!def?.corePerCardBonusPercent || state.copies <= 0) continue;
+    rate += state.copies * def.corePerCardBonusPercent * cardGearMultiplier(state.copies, def.gearThresholds);
+  }
+  return rate;
 }
 
 export function prestigeBonus(player: Player): Decimal {
-  let bonus = 1 + player.passiveCoreBonusPercent;
+  let bonus =
+    1 + player.passiveCoreBonusPercent + player.intelligenceCores.toNumber() * passiveCoreBonusRate(player);
   for (const upgradeId of player.coreUpgrades) {
     const def = CORE_UPGRADES_BY_ID[upgradeId];
     if ((def?.category === "global" || def?.category === "efficiency") && def.effectPercent) {
@@ -229,12 +281,22 @@ export function massBonus(player: Player): number {
   return Math.sqrt(total) * MASS_FACTOR;
 }
 
-export function cardGearMultiplier(copies: number): number {
+export function cardGearMultiplier(
+  copies: number,
+  thresholds: Array<{ copies: number; multiplier: number }> = CARD_GEAR_THRESHOLDS,
+): number {
   let multiplier = 1;
-  for (const tier of CARD_GEAR_THRESHOLDS) {
+  for (const tier of thresholds) {
     if (copies >= tier.copies) multiplier = tier.multiplier;
   }
   return multiplier;
+}
+
+/** Karten, deren verknüpftes Gebäude statt Wissen/Sek. den Klickwert erhöht
+ * (aktuell nur Höhlenzeichnungen), boosten Wissen/Klick statt Wissen/Sek. —
+ * siehe cardsClickBonus(). */
+function isClickLinkedCard(linkedBuildingId: string): boolean {
+  return Boolean(BUILDINGS_BY_ID[linkedBuildingId]?.clickBonusPerUnit);
 }
 
 /** Ausrüstungs-Multiplikator wird automatisch ab den Kopie-Schwellen angewendet (Abschnitt 13). */
@@ -242,8 +304,20 @@ export function cardsBonus(player: Player): number {
   let bonus = 0;
   for (const [cardId, state] of Object.entries(player.cards)) {
     const def = CARDS_BY_ID[cardId];
-    if (!def || state.copies <= 0) continue;
-    bonus += state.copies * def.baseBoostPercent * cardGearMultiplier(state.copies);
+    if (!def || state.copies <= 0 || isClickLinkedCard(def.linkedBuildingId)) continue;
+    bonus += state.copies * def.baseBoostPercent * cardGearMultiplier(state.copies, def.gearThresholds);
+  }
+  return bonus;
+}
+
+/** Analog zu cardsBonus(), aber für Karten, die an eine Klick-Wissensquelle
+ * gebunden sind (z.B. Höhlenzeichnungen-Karten) — wirkt auf Wissen/Klick. */
+export function cardsClickBonus(player: Player): number {
+  let bonus = 0;
+  for (const [cardId, state] of Object.entries(player.cards)) {
+    const def = CARDS_BY_ID[cardId];
+    if (!def || state.copies <= 0 || !isClickLinkedCard(def.linkedBuildingId)) continue;
+    bonus += state.copies * def.baseBoostPercent * cardGearMultiplier(state.copies, def.gearThresholds);
   }
   return bonus;
 }
@@ -311,7 +385,12 @@ export function baseClickValue(player: Player): Decimal {
   for (const b of BUILDINGS) {
     if (!b.clickBonusPerUnit) continue;
     const owned = ownedCount(player, b.id);
-    value = value.plus(b.clickBonusPerUnit.times(owned).times(buildingMilestoneMultiplier(owned)));
+    value = value.plus(
+      b.clickBonusPerUnit
+        .times(owned)
+        .times(buildingLocalMultiplier(b.id, player))
+        .times(buildingMilestoneMultiplier(owned)),
+    );
   }
   return value;
 }
@@ -341,7 +420,7 @@ export function hoehlenClickUpgradeMultiplier(player: Player): number {
 
 export function clickValue(player: Player, kps: Decimal): Decimal {
   const base = baseClickValue(player)
-    .times(1 + clickUpgradeBonus(player))
+    .times(1 + clickUpgradeBonus(player) + cardsClickBonus(player))
     .times(hoehlenClickUpgradeMultiplier(player));
   const wqBonus = kps.times(wissensquellenUpgradeClickPercent(player));
   const buffMultiplier = player.activeCardBuffMultiplier > 0 ? player.activeCardBuffMultiplier : 1;
@@ -373,9 +452,9 @@ export function cardSpawnChance(cardId: string, player: Player): number {
   if (!def) return 0;
   const owned = ownedCount(player, def.linkedBuildingId);
   if (owned < def.spawnThreshold) return 0;
-  const rarityWeight = RARITY_TABLE[def.rarity].chanceWeight;
+  const baseChance = def.baseDropChance ?? CARD_CLICK_DROP_BASE_CHANCE * RARITY_TABLE[def.rarity].chanceWeight;
   const over = owned - def.spawnThreshold;
-  const chance = CARD_CLICK_DROP_BASE_CHANCE * rarityWeight * (1 + Math.log(1 + over) * CARD_DROP_LOG_SCALE);
+  const chance = baseChance * (1 + Math.log(1 + over) * CARD_DROP_LOG_SCALE);
   return Math.min(chance, CARD_DROP_CHANCE_CEILING);
 }
 

@@ -382,6 +382,9 @@ button {
   aspect-ratio: 2 / 1;
   min-height: 0;
   height: auto;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
 }
 
 .building-row .icon {
@@ -646,6 +649,11 @@ button {
   color: var(--text);
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
+}
+
+.button-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .modal-backdrop {

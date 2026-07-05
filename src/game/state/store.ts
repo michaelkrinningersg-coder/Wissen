@@ -4,7 +4,7 @@ import type { Player } from "../types";
 import { createInitialPlayer } from "./initialState";
 import { BUILDINGS, BUILDINGS_BY_ID } from "../config/buildings";
 import { COMBO_BUILDINGS_BY_ID } from "../config/comboBuildings";
-import { CORE_UPGRADES_BY_ID, isCoreShopFullyPurchased, isCoreUpgradeAvailable } from "../config/coreUpgrades";
+import { CORE_UPGRADES_BY_ID, isCoreUpgradeAvailable } from "../config/coreUpgrades";
 import { ACHIEVEMENTS_BY_ID } from "../config/achievements";
 import { GAME_EVENTS } from "../config/events";
 import * as formulas from "../formulas";
@@ -73,6 +73,7 @@ interface GameStoreState {
     purchaseCoreUpgrade: (upgradeId: string) => void;
     unlockComboBuilding: (comboId: string) => void;
     prestige: () => void;
+    miniPrestige: () => void;
     replacePlayer: (player: Player) => void;
     resetGame: () => void;
     tick: (dtSeconds: number) => void;
@@ -198,7 +199,6 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       if (!formulas.canPrestige(player)) return;
       const oldTier = formulas.currentEpochNumber(player.epochenLevel);
       const cores = formulas.coresAwarded(player.knowledgeEarnedThisRun);
-      const fullyPurchased = isCoreShopFullyPurchased(player.coreUpgrades);
       const elapsed = player.playtimeSeconds - player.currentEpochStartedAt;
       const existingBest = player.epochCompletionTimes[oldTier];
       const newBest = existingBest === undefined ? elapsed : Math.min(existingBest, elapsed);
@@ -211,10 +211,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         knowledge: ZERO,
         knowledgeEarnedThisRun: ZERO,
         buildings: Object.fromEntries(BUILDINGS.map((b) => [b.id, { owned: 0 }])),
-        intelligenceCores: fullyPurchased ? player.intelligenceCores : player.intelligenceCores.plus(cores),
-        passiveCoreBonusPercent: fullyPurchased
-          ? player.passiveCoreBonusPercent + cores.toNumber() * formulas.passiveCoreBonusRate(player)
-          : player.passiveCoreBonusPercent,
+        intelligenceCores: player.intelligenceCores.plus(cores),
         totalCoresEarned: player.totalCoresEarned.plus(cores),
         epochenLevel: newEpochLevel,
         prestigeCount: player.prestigeCount + 1,
@@ -225,6 +222,29 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
           ...player.playtimeByEpoch,
           [newTier]: player.playtimeByEpoch[newTier] ?? 0,
         },
+        activeCardBuffMultiplier: 1,
+        activeCardBuffExpiresAt: 0,
+      };
+      next = applyAchievements(next);
+      set({ player: next });
+    },
+
+    /** Kern-Prestige: kleiner, viel früher nutzbarer Reset für Kerne, der
+     * EpochenLevel/EpochenBonus unangetastet lässt (das große Epochen-
+     * Prestige bleibt separat bei der hohen Wissensschwelle). */
+    miniPrestige: () => {
+      const { player } = get();
+      if (!formulas.canMiniPrestige(player)) return;
+      const cores = formulas.coresAwarded(player.knowledgeEarnedThisRun);
+
+      let next: Player = {
+        ...player,
+        knowledge: ZERO,
+        knowledgeEarnedThisRun: ZERO,
+        buildings: Object.fromEntries(BUILDINGS.map((b) => [b.id, { owned: 0 }])),
+        intelligenceCores: player.intelligenceCores.plus(cores),
+        totalCoresEarned: player.totalCoresEarned.plus(cores),
+        miniPrestigeCount: player.miniPrestigeCount + 1,
         activeCardBuffMultiplier: 1,
         activeCardBuffExpiresAt: 0,
       };

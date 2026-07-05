@@ -67,6 +67,7 @@ export function StatsScreen({ player, onImport, onResetGame }: StatsScreenProps)
         <StatTile label="Höchste Klicks/Sek." value={player.peakClicksPerSecond.toFixed(1)} />
         <StatTile label="Spielzeit gesamt" value={formatDuration(player.playtimeSeconds)} />
         <StatTile label="Prestiges gesamt" value={formatInt(player.prestigeCount)} />
+        <StatTile label="Kern-Prestiges gesamt" value={formatInt(player.miniPrestigeCount)} />
       </div>
 
       <div className="section-title">⏱️ Spielzeit pro Epoche</div>
@@ -109,7 +110,10 @@ export function StatsScreen({ player, onImport, onResetGame }: StatsScreenProps)
         <StatTile label="Aktuelles Guthaben" value={formatKnowledge(player.intelligenceCores)} />
         <StatTile label="Insgesamt verdient" value={formatKnowledge(player.totalCoresEarned)} />
         <StatTile label="Kern-Upgrades gekauft" value={formatInt(player.coreUpgrades.length)} />
-        <StatTile label="Passiver Bonus (Shop voll)" value={`+${(player.passiveCoreBonusPercent * 100).toFixed(1)}% WPS`} />
+        <StatTile
+          label="Passiver Bonus je Kern im Guthaben"
+          value={`+${(formulas.passiveCoreBonusRate(player) * 100).toFixed(1)}% WPS`}
+        />
       </div>
 
       <div className="section-title">🃏 Karten</div>

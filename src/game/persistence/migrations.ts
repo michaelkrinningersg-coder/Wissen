@@ -39,6 +39,7 @@ function defaultSaveShape(): PlayerSave {
     playtimeSeconds: 0,
     playtimeByEpoch: {},
     prestigeCount: 0,
+    miniPrestigeCount: 0,
     epoch5LoopCount: 0,
     epochCompletionTimes: {},
     currentEpochStartedAt: 0,

@@ -16,6 +16,7 @@ interface MainScreenProps {
   onUnlockCombo: (id: string) => void;
   onPrestige: () => void;
   onToggleDebugAutoClicker: () => void;
+  onMiniPrestige: () => void;
 }
 
 // Desktop-Layout, volle Bildschirmbreite: links kompakte Sidebar mit
@@ -30,6 +31,7 @@ export function MainScreen({
   onUnlockCombo,
   onPrestige,
   onToggleDebugAutoClicker,
+  onMiniPrestige,
 }: MainScreenProps) {
   const kps = formulas.knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
   const clickValue = formulas.clickValue(player, kps);
@@ -51,7 +53,7 @@ export function MainScreen({
       <div className="main-col main-col-click">
         <ClickButton onClick={onClick} clickValueLabel={formatKnowledge(clickValue)} />
         <ComboBuildingsPanel player={player} onUnlock={onUnlockCombo} />
-        <EpochPanel player={player} onPrestige={onPrestige} />
+        <EpochPanel player={player} onPrestige={onPrestige} onMiniPrestige={onMiniPrestige} />
       </div>
 
       <div className="main-col main-col-buildings">

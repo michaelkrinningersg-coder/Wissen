@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Decimal } from "../src/game/decimal";
 import { createInitialPlayer } from "../src/game/state/initialState";
 import { BUILDINGS_BY_ID } from "../src/game/config/buildings";
+import { CARDS_BY_ID } from "../src/game/config/cards";
 import {
   baseClickValue,
   batchCost,
@@ -9,8 +10,14 @@ import {
   buildingLocalMultiplier,
   buildingMilestoneMultiplier,
   buildingProduction,
+  buildingScalingBonus,
+  buildingScalingBreakdown,
+  canMiniPrestige,
   canPrestige,
   cardGearMultiplier,
+  cardSpawnChance,
+  cardsBonus,
+  cardsClickBonus,
   clickValue,
   coresAwarded,
   epochenBonus,
@@ -18,11 +25,13 @@ import {
   knowledgePerSecond,
   maxAffordable,
   passiveCoreBonusRate,
+  prestigeBonus,
   prestigeMinKnowledge,
   wissensquellenUpgradeClickPercent,
 } from "../src/game/formulas";
 import { ACHIEVEMENTS_BY_ID } from "../src/game/config/achievements";
 import {
+  BUILDING_MILESTONES,
   CHAIN_FACTOR,
   CLICK_BASE_VALUE,
   COST_GROWTH,
@@ -97,8 +106,44 @@ describe("Stacking-Regel: lokale Boni additiv, Kategorien multiplikativ", () => 
 
     const expectedSynergy = SYNERGY_FACTOR * Math.log(1 + 100);
     const expectedChain = 100 * CHAIN_FACTOR;
+    const expectedScaling = buildingScalingBonus("e1_erzaehlungen", player);
     const multiplier = buildingLocalMultiplier("e1_erzaehlungen", player);
-    expect(multiplier).toBeCloseTo(1 + expectedSynergy + expectedChain, 6);
+    expect(multiplier).toBeCloseTo(1 + expectedSynergy + expectedChain + expectedScaling, 6);
+  });
+});
+
+describe("buildingScalingBonus", () => {
+  it("adds 1% per owned unit of the same type, e.g. +100% at 100 units", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 100 };
+    expect(buildingScalingBonus("e1_hoehlenzeichnungen", player)).toBeCloseTo(1, 6);
+  });
+
+  it("adds 0.1% per owned unit of every other building type, regardless of type", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 10 };
+    player.buildings["e1_buecher"] = { owned: 20 };
+    player.buildings["e2_labore"] = { owned: 5 };
+
+    expect(buildingScalingBonus("e1_hoehlenzeichnungen", player)).toBeCloseTo(10 * 0.01 + 25 * 0.001, 6);
+    expect(buildingScalingBonus("e1_buecher", player)).toBeCloseTo(20 * 0.01 + 15 * 0.001, 6);
+  });
+
+  it("buildingScalingBreakdown exposes the owned counts behind each part of the bonus", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 10 };
+    player.buildings["e1_buecher"] = { owned: 20 };
+    player.buildings["e2_labore"] = { owned: 5 };
+
+    const breakdown = buildingScalingBreakdown("e1_hoehlenzeichnungen", player);
+    expect(breakdown.ownedSelf).toBe(10);
+    expect(breakdown.ownedOthers).toBe(25);
+    expect(breakdown.selfBonus).toBeCloseTo(0.1, 6);
+    expect(breakdown.crossBonus).toBeCloseTo(0.025, 6);
+    expect(breakdown.selfBonus + breakdown.crossBonus).toBeCloseTo(
+      buildingScalingBonus("e1_hoehlenzeichnungen", player),
+      6,
+    );
   });
 
   it("multiplies categories (epoch/prestige/global-block/event) rather than adding them", () => {
@@ -170,6 +215,50 @@ describe("cardGearMultiplier", () => {
     expect(cardGearMultiplier(100)).toBe(1.5);
     expect(cardGearMultiplier(1000)).toBe(1.5);
   });
+
+  it("uses a card's own gearThresholds override instead of the default table when given", () => {
+    const custom = [{ copies: 2, multiplier: 1.2 }];
+    expect(cardGearMultiplier(1, custom)).toBe(1);
+    expect(cardGearMultiplier(2, custom)).toBe(1.2);
+    expect(cardGearMultiplier(9, custom)).toBe(1.2);
+    // ohne Override bleibt es beim Standard-Verhalten
+    expect(cardGearMultiplier(2)).toBe(1);
+  });
+});
+
+describe("Höhlenzeichnungen-Karten (Urzeit)", () => {
+  it("boost Wissen/Klick via cardsClickBonus/clickValue instead of the Wissen/Sek. cardsBonus", () => {
+    const player = createInitialPlayer();
+    player.cards["card_chauvet"] = { copies: 1, equipped: true };
+    expect(cardsBonus(player)).toBeCloseTo(0, 6);
+    expect(cardsClickBonus(player)).toBeCloseTo(0.1, 6); // 10% je Kopie, keine Ausrüstungsstufe erreicht
+
+    const kps = new Decimal(0);
+    const value = clickValue(player, kps);
+    expect(value.toNumber()).toBeCloseTo(CLICK_BASE_VALUE * 1.1, 6);
+  });
+
+  it("stack their own steep gear thresholds (2/10/25/50/100 Kopien) instead of the default table", () => {
+    const player = createInitialPlayer();
+    player.cards["card_chauvet"] = { copies: 2, equipped: true };
+    expect(cardsClickBonus(player)).toBeCloseTo(0.1 * 2 * 1.2, 6);
+
+    player.cards["card_chauvet"] = { copies: 10, equipped: true };
+    expect(cardsClickBonus(player)).toBeCloseTo(0.1 * 10 * 2, 6);
+  });
+
+  it("add a per-copy bonus to passiveCoreBonusRate via corePerCardBonusPercent", () => {
+    const player = createInitialPlayer();
+    const baseline = passiveCoreBonusRate(player);
+    player.cards["card_breuil"] = { copies: 1, equipped: true };
+    expect(passiveCoreBonusRate(player)).toBeCloseTo(baseline + 0.2, 6);
+  });
+
+  it("use a custom baseDropChance instead of the rarity-weighted default", () => {
+    const player = createInitialPlayer();
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: CARDS_BY_ID["card_chauvet"].spawnThreshold };
+    expect(cardSpawnChance("card_chauvet", player)).toBeCloseTo(1 / 10_000, 9);
+  });
 });
 
 describe("epochenBonus", () => {
@@ -188,8 +277,9 @@ describe("Klickwert: Höhlenzeichnungen + Wissensquellen-Upgrades", () => {
     expect(baseClickValue(player).toNumber()).toBeCloseTo(CLICK_BASE_VALUE, 6);
 
     player.buildings["e1_hoehlenzeichnungen"] = { owned: 4 };
+    const localMultiplier = buildingLocalMultiplier("e1_hoehlenzeichnungen", player);
     expect(baseClickValue(player).toNumber()).toBeCloseTo(
-      CLICK_BASE_VALUE + 4 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
+      CLICK_BASE_VALUE + 4 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * localMultiplier,
       6,
     );
   });
@@ -221,14 +311,17 @@ describe("Klickwert: Höhlenzeichnungen + Wissensquellen-Upgrades", () => {
   });
 });
 
+function expectedMilestoneMultiplier(owned: number): number {
+  return BUILDING_MILESTONES.filter((m) => owned >= m.threshold).reduce((acc, m) => acc * m.multiplier, 1);
+}
+
 describe("buildingMilestoneMultiplier", () => {
   it("stacks every reached threshold multiplicatively", () => {
     expect(buildingMilestoneMultiplier(0)).toBe(1);
-    expect(buildingMilestoneMultiplier(49)).toBe(1);
-    expect(buildingMilestoneMultiplier(50)).toBeCloseTo(1.25, 6);
-    expect(buildingMilestoneMultiplier(75)).toBeCloseTo(1.25 * 1.25, 6);
-    expect(buildingMilestoneMultiplier(150)).toBeCloseTo(1.25 ** 5, 6);
-    expect(buildingMilestoneMultiplier(1000)).toBeCloseTo(1.25 ** 5 * 1.5 ** 3 * 2 * 4 * 6, 4);
+    expect(buildingMilestoneMultiplier(9)).toBe(1);
+    for (const owned of [10, 25, 50, 75, 150, 1000]) {
+      expect(buildingMilestoneMultiplier(owned)).toBeCloseTo(expectedMilestoneMultiplier(owned), 6);
+    }
   });
 
   it("applies to a building's Wissen/Sek. production once its threshold is reached", () => {
@@ -237,14 +330,17 @@ describe("buildingMilestoneMultiplier", () => {
     const def = BUILDINGS_BY_ID["e1_erzaehlungen"];
     const withoutMilestone = def.baseProduction.times(50).times(buildingLocalMultiplier("e1_erzaehlungen", player));
     const actual = buildingProduction("e1_erzaehlungen", player);
-    expect(actual.div(withoutMilestone).toNumber()).toBeCloseTo(1.25, 6);
+    expect(actual.div(withoutMilestone).toNumber()).toBeCloseTo(expectedMilestoneMultiplier(50), 6);
   });
 
   it("applies to Höhlenzeichnungen' click bonus instead of Wissen/Sek.", () => {
     const player = createInitialPlayer();
     player.buildings["e1_hoehlenzeichnungen"] = { owned: 50 };
     expect(buildingProduction("e1_hoehlenzeichnungen", player).toNumber()).toBe(0);
-    const expectedClickBonus = CLICK_BASE_VALUE + 50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * 1.25;
+    const localMultiplier = buildingLocalMultiplier("e1_hoehlenzeichnungen", player);
+    const expectedClickBonus =
+      CLICK_BASE_VALUE +
+      50 * HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT * expectedMilestoneMultiplier(50) * localMultiplier;
     expect(baseClickValue(player).toNumber()).toBeCloseTo(expectedClickBonus, 6);
   });
 });
@@ -258,5 +354,24 @@ describe("passiveCoreBonusRate", () => {
       PASSIVE_CORE_BONUS_PER_CORE_BASE + 3 * PASSIVE_CORE_BONUS_PER_ACHIEVEMENT,
       6,
     );
+  });
+});
+
+describe("prestigeBonus", () => {
+  it("applies the per-core bonus live to every currently held (unspent) core", () => {
+    const player = createInitialPlayer();
+    expect(prestigeBonus(player).toNumber()).toBeCloseTo(1, 6);
+    player.intelligenceCores = new Decimal(5);
+    expect(prestigeBonus(player).toNumber()).toBeCloseTo(1 + 5 * passiveCoreBonusRate(player), 6);
+  });
+});
+
+describe("canMiniPrestige", () => {
+  it("is eligible exactly once the first-core threshold is reached, independent of the epoch prestige minimum", () => {
+    const player = createInitialPlayer();
+    player.knowledgeEarnedThisRun = firstCoreKnowledgeThreshold().minus(1);
+    expect(canMiniPrestige(player)).toBe(false);
+    player.knowledgeEarnedThisRun = firstCoreKnowledgeThreshold();
+    expect(canMiniPrestige(player)).toBe(true);
   });
 });

@@ -47,6 +47,9 @@ export const PRESTIGE_MIN_KNOWLEDGE_GROWTH = 3000;
  * multiplizieren sich (stacken). Gilt bei Höhlenzeichnungen auf den
  * Wissen/Klick-Bonus, bei allen anderen Gebäuden auf Wissen/Sek. */
 export const BUILDING_MILESTONES: Array<{ threshold: number; multiplier: number }> = [
+  { threshold: 10, multiplier: 1.25 },
+  { threshold: 15, multiplier: 1.25 },
+  { threshold: 25, multiplier: 1.25 },
   { threshold: 50, multiplier: 1.25 },
   { threshold: 75, multiplier: 1.25 },
   { threshold: 100, multiplier: 1.25 },
@@ -126,6 +129,12 @@ export const HOEHLEN_CLICK_UPGRADES: HoehlenUpgradeDef[] = [
 export const SYNERGY_FACTOR = 0.05; // 5% * ln(1+Partneranzahl)
 export const CHAIN_FACTOR = 0.002; // 0.2% pro Einheit des Vorgänger-Gebäudes
 
+// Basisverdienst-Skalierung je Gebäude: eigene Anzahl zählt stark (1% pro
+// Einheit desselben Typs, z.B. 100 Höhlenzeichnungen -> +100%), jede andere
+// besessene Wissensquelle (unabhängig vom Typ) zählt schwächer (0,1%/Einheit).
+export const BUILDING_SELF_SCALING_FACTOR = 0.01; // 1% pro Einheit desselben Typs
+export const BUILDING_CROSS_SCALING_FACTOR = 0.001; // 0,1% pro Einheit jeder anderen Wissensquelle
+
 // Diversität & Masse
 export const DIVERSITY_FACTOR = 0.02; // 2% pro unterschiedlichem Typ
 export const MASS_FACTOR = 0.01; // 1% * sqrt(GesamtAnzahl)
@@ -162,6 +171,17 @@ export const CARD_GEAR_THRESHOLDS: Array<{ copies: number; multiplier: number }>
   { copies: 25, multiplier: 1.15 },
   { copies: 50, multiplier: 1.3 },
   { copies: 100, multiplier: 1.5 },
+];
+
+// Eigene, deutlich stärkere Ausrüstungs-Stufen für die Höhlenzeichnungen-
+// Karten (Urzeit): +20% bei 2 Kopien, danach verdoppelt sich der Bonus bei
+// 10/25/50/100 Kopien desselben Typs jeweils erneut.
+export const HOEHLENZEICHNUNGEN_CARD_GEAR_THRESHOLDS: Array<{ copies: number; multiplier: number }> = [
+  { copies: 2, multiplier: 1.2 },
+  { copies: 10, multiplier: 2 },
+  { copies: 25, multiplier: 4 },
+  { copies: 50, multiplier: 8 },
+  { copies: 100, multiplier: 16 },
 ];
 
 // Events

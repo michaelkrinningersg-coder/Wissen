@@ -98,12 +98,14 @@ function App() {
             onUnlockCombo={(id) => withRefresh(() => actions.unlockComboBuilding(id))}
             onPrestige={() => withRefresh(actions.prestige)}
             onToggleDebugAutoClicker={() => withRefresh(actions.toggleDebugAutoClicker)}
+            onMiniPrestige={() => withRefresh(actions.miniPrestige)}
           />
         )}
         {tab === "prestige" && (
           <PrestigeScreen
             player={player}
             onPrestige={() => withRefresh(actions.prestige)}
+            onMiniPrestige={() => withRefresh(actions.miniPrestige)}
             onPurchaseUpgrade={(id) => withRefresh(() => actions.purchaseCoreUpgrade(id))}
           />
         )}

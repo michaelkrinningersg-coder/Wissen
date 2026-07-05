@@ -26,6 +26,7 @@ export interface PlayerSave {
   playtimeSeconds: number;
   playtimeByEpoch: Record<number, number>;
   prestigeCount: number;
+  miniPrestigeCount: number;
   epoch5LoopCount: number;
   epochCompletionTimes: Record<number, number>;
   currentEpochStartedAt: number;
@@ -63,6 +64,7 @@ export function toSaveShape(player: Player): PlayerSave {
     playtimeSeconds: player.playtimeSeconds,
     playtimeByEpoch: player.playtimeByEpoch,
     prestigeCount: player.prestigeCount,
+    miniPrestigeCount: player.miniPrestigeCount,
     epoch5LoopCount: player.epoch5LoopCount,
     epochCompletionTimes: player.epochCompletionTimes,
     currentEpochStartedAt: player.currentEpochStartedAt,
@@ -102,6 +104,7 @@ export function fromSaveShape(raw: unknown): Player {
     playtimeSeconds: save.playtimeSeconds,
     playtimeByEpoch: { ...base.playtimeByEpoch, ...save.playtimeByEpoch },
     prestigeCount: save.prestigeCount,
+    miniPrestigeCount: save.miniPrestigeCount,
     epoch5LoopCount: save.epoch5LoopCount,
     epochCompletionTimes: save.epochCompletionTimes,
     currentEpochStartedAt: save.currentEpochStartedAt,

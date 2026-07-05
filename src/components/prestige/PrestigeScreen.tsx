@@ -17,11 +17,13 @@ const EPOCH_NAMES: Record<number, string> = {
 interface PrestigeScreenProps {
   player: Player;
   onPrestige: () => void;
+  onMiniPrestige: () => void;
   onPurchaseUpgrade: (id: string) => void;
 }
 
-export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: PrestigeScreenProps) {
+export function PrestigeScreen({ player, onPrestige, onMiniPrestige, onPurchaseUpgrade }: PrestigeScreenProps) {
   const [confirming, setConfirming] = useState(false);
+  const [confirmingMini, setConfirmingMini] = useState(false);
   const currentEpoch = Math.min(player.epochenLevel + 1, 5);
   const nextEpoch = Math.min(player.epochenLevel + 2, 5);
   const cores = formulas.coresAwarded(player.knowledgeEarnedThisRun);
@@ -32,6 +34,7 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
 
   const minKnowledge = formulas.prestigeMinKnowledge(player.epochenLevel);
   const eligible = formulas.canPrestige(player);
+  const miniEligible = formulas.canMiniPrestige(player);
   const progress = player.knowledgeEarnedThisRun.div(minKnowledge).toNumber();
   const firstCoreThreshold = formulas.firstCoreKnowledgeThreshold();
   const hasFirstCore = player.totalCoresEarned.gt(0) || player.intelligenceCores.gt(0);
@@ -52,8 +55,24 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
         </div>
         <div className="text-dim">
           🌟 {hasFirstCore ? "Erster Kern erhalten bei" : "Erster Kern ab"}: {formatKnowledge(firstCoreThreshold)}{" "}
-          generiertem Wissen · Bonus je ungenutztem Kern: +{formatPercent(formulas.passiveCoreBonusRate(player))} Wissen/Sek.
-          (sobald Kern-Shop komplett ausgebaut ist)
+          generiertem Wissen · Bonus je Kern im Guthaben: +{formatPercent(formulas.passiveCoreBonusRate(player))}{" "}
+          Wissen/Sek. (gilt sofort für jeden ungenutzten Kern)
+        </div>
+
+        <div style={{ marginTop: "0.5rem" }}>
+          <button
+            type="button"
+            className="button-secondary"
+            disabled={!miniEligible}
+            onClick={() => setConfirmingMini(true)}
+            title={
+              miniEligible
+                ? "Setzt Wissen, Gebäude und den Fortschritt zur nächsten Epoche zurück, EpochenLevel bleibt erhalten"
+                : `Ab ${formatKnowledge(firstCoreThreshold)} Wissen in dieser Epoche verfügbar`
+            }
+          >
+            🌟 Kern-Prestige {miniEligible ? `(+${formatKnowledge(cores)})` : ""}
+          </button>
         </div>
       </div>
 
@@ -104,6 +123,21 @@ export function PrestigeScreen({ player, onPrestige, onPurchaseUpgrade }: Presti
             onPrestige();
           }}
           onCancel={() => setConfirming(false)}
+        />
+      )}
+
+      {confirmingMini && (
+        <ConfirmDialog
+          title="Kern-Prestige durchführen?"
+          description={`Wissen und alle Gebäude der aktuellen Epoche werden auf 0 zurückgesetzt (das setzt auch den Fortschritt zur nächsten Epoche zurück). Du erhältst sofort 🌟 ${formatKnowledge(
+            cores,
+          )} neue Kerne. EpochenLevel, Karten, Achievements und Kern-Upgrades bleiben erhalten.`}
+          confirmLabel="Zurücksetzen"
+          onConfirm={() => {
+            setConfirmingMini(false);
+            onMiniPrestige();
+          }}
+          onCancel={() => setConfirmingMini(false)}
         />
       )}
 

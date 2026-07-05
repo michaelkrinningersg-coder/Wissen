@@ -34,7 +34,10 @@ export interface CardDef {
   rarity: Rarity;
   linkedBuildingId: string;
   spawnThreshold: number;
-  baseBoostPercent: number; // per copy
+  baseBoostPercent: number; // per copy; boosts Wissen/Sek. normally, or Wissen/Klick if linkedBuildingId is a click-Gebäude
+  baseDropChance?: number; // überschreibt die rarity-gewichtete Standard-Dropchance, falls gesetzt
+  corePerCardBonusPercent?: number; // zusätzlicher %-Punkt-Zuschlag auf passiveCoreBonusRate, pro Kopie
+  gearThresholds?: Array<{ copies: number; multiplier: number }>; // überschreibt CARD_GEAR_THRESHOLDS, falls gesetzt
 }
 
 export interface CoreUpgradeDef {
@@ -154,6 +157,7 @@ export interface Player {
   playtimeByEpoch: Record<number, number>;
 
   prestigeCount: number;
+  miniPrestigeCount: number;
   epoch5LoopCount: number;
   epochCompletionTimes: Record<number, number>; // epoch -> seconds taken
   currentEpochStartedAt: number;
