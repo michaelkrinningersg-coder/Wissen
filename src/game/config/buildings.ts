@@ -38,8 +38,8 @@ const RAW_BUILDINGS: RawBuilding[] = [
     imageUrl: "/buildings/e1_erzaehlungen.jpg",
   },
   { id: "e1_buecher", name: "Bücher", icon: "📖", epoch: 1, imageUrl: "/buildings/e1_buecher.jpg" },
-  { id: "e1_krippe", name: "Krippe", icon: "🍼", epoch: 1 },
-  { id: "e1_kindergarten", name: "Kindergarten", icon: "🧸", epoch: 1 },
+  { id: "e1_krippe", name: "Krippe", icon: "🍼", epoch: 1, imageUrl: "/buildings/e1_krippe.jpg" },
+  { id: "e1_kindergarten", name: "Kindergarten", icon: "🧸", epoch: 1, imageUrl: "/buildings/e1_kindergarten.jpg" },
   {
     id: "e1_grundschule",
     name: "Grundschule",
@@ -48,9 +48,9 @@ const RAW_BUILDINGS: RawBuilding[] = [
     imageUrl: "/buildings/e1_grundschule.jpg",
   },
   { id: "e1_gymnasium", name: "Gymnasium", icon: "📐", epoch: 1, imageUrl: "/buildings/e1_gymnasium.jpg" },
-  { id: "e1_studenten", name: "Studenten", icon: "🧑‍🎓", epoch: 1 },
-  { id: "e1_bibliotheken", name: "Bibliotheken", icon: "📚", epoch: 1 },
-  { id: "e1_vorlesungen", name: "Vorlesungen", icon: "🗣️", epoch: 1 },
+  { id: "e1_studenten", name: "Studenten", icon: "🧑‍🎓", epoch: 1, imageUrl: "/buildings/e1_studenten.jpg" },
+  { id: "e1_bibliotheken", name: "Bibliotheken", icon: "📚", epoch: 1, imageUrl: "/buildings/e1_bibliotheken.jpg" },
+  { id: "e1_vorlesungen", name: "Vorlesungen", icon: "🗣️", epoch: 1, imageUrl: "/buildings/e1_vorlesungen.jpg" },
   { id: "e1_notizen", name: "Notizen & Tagebücher", icon: "📓", epoch: 1 },
   { id: "e1_philosophenzirkel", name: "Philosophenzirkel", icon: "🏛️", epoch: 1 },
 

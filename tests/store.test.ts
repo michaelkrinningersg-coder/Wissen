@@ -234,4 +234,54 @@ describe("save round-trip", () => {
   it("importSaveCode rejects garbage input", () => {
     expect(() => importSaveCode("not-a-real-code")).toThrow();
   });
+
+  it("click() accumulates clickKnowledge and peakKnowledge", () => {
+    const { actions } = useGameStore.getState();
+    actions.click();
+    const { player } = useGameStore.getState();
+    expect(player.clickKnowledge.toNumber()).toBeGreaterThan(0);
+    expect(player.clickKnowledge.eq(player.knowledge)).toBe(true);
+    expect(player.peakKnowledge.eq(player.knowledge)).toBe(true);
+  });
+
+  it("purchaseHoehlenUpgrade requires unlock + affordability, then deducts cost", () => {
+    const { actions } = useGameStore.getState();
+    // Bedingung noch nicht erfüllt (0 Klick-Wissen) -> Kauf schlägt fehl.
+    useGameStore.setState((s) => ({ player: { ...s.player, knowledge: s.player.knowledge.plus(1000) } }));
+    actions.purchaseHoehlenUpgrade("hoehlen_click_x2_1");
+    expect(useGameStore.getState().player.purchasedWqUpgrades).toEqual([]);
+
+    // Bedingung erfüllen, aber Wissen zu knapp -> weiterhin kein Kauf.
+    useGameStore.setState((s) => ({
+      player: {
+        ...s.player,
+        clickKnowledge: s.player.clickKnowledge.plus(100),
+        knowledge: s.player.knowledge.minus(600),
+      },
+    }));
+    actions.purchaseHoehlenUpgrade("hoehlen_click_x2_1");
+    expect(useGameStore.getState().player.purchasedWqUpgrades).toEqual([]);
+
+    // Genug Wissen -> Kauf zieht 500 ab und schaltet frei.
+    useGameStore.setState((s) => ({ player: { ...s.player, knowledge: s.player.knowledge.plus(500) } }));
+    const before = useGameStore.getState().player.knowledge.toNumber();
+    actions.purchaseHoehlenUpgrade("hoehlen_click_x2_1");
+    const after = useGameStore.getState();
+    expect(after.player.purchasedWqUpgrades).toEqual(["hoehlen_click_x2_1"]);
+    expect(before - after.player.knowledge.toNumber()).toBeCloseTo(500, 6);
+  });
+
+  it("toggleDebugAutoClicker flips the flag and generates click knowledge on tick", () => {
+    const { actions } = useGameStore.getState();
+    expect(useGameStore.getState().player.debugAutoClicker).toBe(false);
+    actions.toggleDebugAutoClicker();
+    expect(useGameStore.getState().player.debugAutoClicker).toBe(true);
+
+    const before = useGameStore.getState().player.clickKnowledge.toNumber();
+    actions.tick(1);
+    const after = useGameStore.getState().player.clickKnowledge.toNumber();
+    // 35 Klicks/Sek. * clickValue (>0) -> spürbarer Zuwachs, ohne echte Klicks zu zählen.
+    expect(after - before).toBeGreaterThan(0);
+    expect(useGameStore.getState().player.totalClicks).toBe(0);
+  });
 });

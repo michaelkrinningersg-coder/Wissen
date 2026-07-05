@@ -382,8 +382,12 @@ button {
   aspect-ratio: 2 / 1;
   min-height: 0;
   height: auto;
-  border: none;
-  border-radius: 0;
+  /* Rahmen liegt bündig auf der Grafik-Außenkante (Bild füllt via cover die
+   * ganze Box). box-sizing sorgt dafür, dass der Rahmen die Grafik nicht
+   * verschiebt, sondern exakt auf ihrem Rand sitzt. */
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   background-color: transparent;
 }
 

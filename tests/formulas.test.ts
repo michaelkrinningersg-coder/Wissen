@@ -22,6 +22,8 @@ import {
   coresAwarded,
   epochenBonus,
   firstCoreKnowledgeThreshold,
+  hoehlenClickUpgradeMultiplier,
+  isHoehlenUpgradeUnlocked,
   knowledgePerSecond,
   maxAffordable,
   passiveCoreBonusRate,
@@ -35,6 +37,7 @@ import {
   CHAIN_FACTOR,
   CLICK_BASE_VALUE,
   COST_GROWTH,
+  HOEHLEN_CLICK_UPGRADES,
   HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT,
   PASSIVE_CORE_BONUS_PER_ACHIEVEMENT,
   PASSIVE_CORE_BONUS_PER_CORE_BASE,
@@ -373,5 +376,46 @@ describe("canMiniPrestige", () => {
     expect(canMiniPrestige(player)).toBe(false);
     player.knowledgeEarnedThisRun = firstCoreKnowledgeThreshold();
     expect(canMiniPrestige(player)).toBe(true);
+  });
+});
+
+describe("Höhlenzeichnungen-Klick-Upgrades", () => {
+  it("stack their clickMultiplier multiplicatively once purchased", () => {
+    const player = createInitialPlayer();
+    expect(hoehlenClickUpgradeMultiplier(player)).toBe(1);
+    player.purchasedWqUpgrades = ["hoehlen_click_x2_1"];
+    expect(hoehlenClickUpgradeMultiplier(player)).toBe(2);
+    player.purchasedWqUpgrades = ["hoehlen_click_x2_1", "hoehlen_click_x2_2"];
+    expect(hoehlenClickUpgradeMultiplier(player)).toBe(4);
+  });
+
+  it("double the click value when purchased", () => {
+    const player = createInitialPlayer();
+    const kps = knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
+    const before = clickValue(player, kps);
+    player.purchasedWqUpgrades = ["hoehlen_click_x2_1"];
+    const after = clickValue(player, kps);
+    expect(after.div(before).toNumber()).toBeCloseTo(2, 6);
+  });
+
+  it("unlock the clickKnowledge-gated upgrade only at its threshold", () => {
+    const upgrade = HOEHLEN_CLICK_UPGRADES.find((u) => u.unlock.kind === "clickKnowledge")!;
+    const player = createInitialPlayer();
+    const kps = knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
+    expect(isHoehlenUpgradeUnlocked(upgrade, player, kps)).toBe(false);
+    player.clickKnowledge = new Decimal(upgrade.unlock.amount);
+    expect(isHoehlenUpgradeUnlocked(upgrade, player, kps)).toBe(true);
+  });
+
+  it("unlock the clickValue-gated upgrade only when Wissen/Klick reaches its threshold", () => {
+    const upgrade = HOEHLEN_CLICK_UPGRADES.find((u) => u.unlock.kind === "clickValue")!;
+    const player = createInitialPlayer();
+    const kps = knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
+    expect(isHoehlenUpgradeUnlocked(upgrade, player, kps)).toBe(false);
+    // Genug Höhlenzeichnungen, damit der Wissen/Klick die Schwelle übersteigt.
+    player.buildings["e1_hoehlenzeichnungen"] = { owned: 20000 };
+    const kps2 = knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
+    expect(clickValue(player, kps2).gte(upgrade.unlock.amount)).toBe(true);
+    expect(isHoehlenUpgradeUnlocked(upgrade, player, kps2)).toBe(true);
   });
 });
