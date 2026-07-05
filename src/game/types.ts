@@ -120,6 +120,11 @@ export interface Player {
   knowledge: Decimal;
   lifetimeKnowledge: Decimal;
   knowledgeEarnedThisRun: Decimal;
+  clickKnowledge: Decimal; // insgesamt durch Klicken (inkl. Auto-/Debug-Klicker) generiertes Wissen
+  peakKnowledge: Decimal; // jemals gleichzeitig gehaltenes Maximal-Wissen (monoton, für Sichtbarkeits-Sperren)
+
+  purchasedWqUpgrades: string[]; // gekaufte Wissensquellen-Upgrades (Höhlenzeichnungen etc.)
+  debugAutoClicker: boolean; // Debug-Schalter: simuliert 35 echte Klicks/Sek. (wird später entfernt)
 
   epochenLevel: number;
   intelligenceCores: Decimal;

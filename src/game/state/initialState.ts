@@ -10,6 +10,11 @@ export function createInitialPlayer(): Player {
     knowledge: ZERO,
     lifetimeKnowledge: ZERO,
     knowledgeEarnedThisRun: ZERO,
+    clickKnowledge: ZERO,
+    peakKnowledge: ZERO,
+
+    purchasedWqUpgrades: [],
+    debugAutoClicker: false,
 
     epochenLevel: 0,
     intelligenceCores: ZERO,

@@ -1,4 +1,4 @@
-import { type Decimal, ZERO } from "../decimal";
+import { type Decimal, decimalMax, ZERO } from "../decimal";
 import type { Player } from "../types";
 import * as formulas from "../formulas";
 import { ACHIEVEMENTS_BY_ID } from "../config/achievements";
@@ -25,6 +25,7 @@ export function applyOfflineProgress(player: Player, nowMs: number): OfflineProg
       knowledge: player.knowledge.plus(gain),
       lifetimeKnowledge: player.lifetimeKnowledge.plus(gain),
       knowledgeEarnedThisRun: player.knowledgeEarnedThisRun.plus(gain),
+      peakKnowledge: decimalMax(player.peakKnowledge, player.knowledge.plus(gain)),
       playtimeSeconds: player.playtimeSeconds + cappedSeconds,
     },
     offlineSeconds: cappedSeconds,

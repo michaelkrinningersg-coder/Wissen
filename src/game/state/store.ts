@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ZERO } from "../decimal";
+import { Decimal, decimalMax, ZERO } from "../decimal";
 import type { Player } from "../types";
 import { createInitialPlayer } from "./initialState";
 import { BUILDINGS, BUILDINGS_BY_ID } from "../config/buildings";
@@ -13,6 +13,8 @@ import {
   CARD_BUFF_DURATION_S,
   CARD_BUFF_MULTIPLIER,
   CLICK_TIMESTAMP_WINDOW_S,
+  DEBUG_AUTOCLICKER_CPS,
+  HOEHLEN_CLICK_UPGRADES,
   EVENT_SPAWN_INTERVAL_MAX_S,
   EVENT_SPAWN_INTERVAL_MIN_S,
   KPS_HISTORY_MAX_POINTS,
@@ -66,6 +68,8 @@ interface GameStoreState {
   actions: {
     click: () => void;
     buyBuilding: (buildingId: string, amount: BuyAmount) => void;
+    purchaseHoehlenUpgrade: (upgradeId: string) => void;
+    toggleDebugAutoClicker: () => void;
     purchaseCoreUpgrade: (upgradeId: string) => void;
     unlockComboBuilding: (comboId: string) => void;
     prestige: () => void;
@@ -89,11 +93,14 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       );
       const clicksPerSecond = clickTimestamps.length / CLICK_TIMESTAMP_WINDOW_S;
 
+      const newKnowledge = player.knowledge.plus(gain);
       let next: Player = {
         ...player,
-        knowledge: player.knowledge.plus(gain),
+        knowledge: newKnowledge,
         lifetimeKnowledge: player.lifetimeKnowledge.plus(gain),
         knowledgeEarnedThisRun: player.knowledgeEarnedThisRun.plus(gain),
+        clickKnowledge: player.clickKnowledge.plus(gain),
+        peakKnowledge: decimalMax(player.peakKnowledge, newKnowledge),
         totalClicks: player.totalClicks + 1,
         clickTimestamps,
         peakClicksPerSecond: Math.max(player.peakClicksPerSecond, clicksPerSecond),
@@ -130,6 +137,29 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       };
       next = applyAchievements(next);
       set({ player: next });
+    },
+
+    purchaseHoehlenUpgrade: (upgradeId) => {
+      const { player } = get();
+      if (player.purchasedWqUpgrades.includes(upgradeId)) return;
+      const def = HOEHLEN_CLICK_UPGRADES.find((u) => u.id === upgradeId);
+      if (!def) return;
+      const kps = formulas.knowledgePerSecond(player, ACHIEVEMENTS_BY_ID);
+      if (!formulas.isHoehlenUpgradeUnlocked(def, player, kps)) return;
+      const cost = new Decimal(def.cost);
+      if (player.knowledge.lt(cost)) return;
+      set({
+        player: {
+          ...player,
+          knowledge: player.knowledge.minus(cost),
+          purchasedWqUpgrades: [...player.purchasedWqUpgrades, upgradeId],
+        },
+      });
+    },
+
+    toggleDebugAutoClicker: () => {
+      const { player } = get();
+      set({ player: { ...player, debugAutoClicker: !player.debugAutoClicker } });
     },
 
     purchaseCoreUpgrade: (upgradeId) => {
@@ -230,17 +260,25 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         next = { ...next, activeCardBuffMultiplier: 1, activeCardBuffExpiresAt: 0 };
       }
 
-      // Auto-Klicker (Kern-Upgrade): kontinuierlicher passiver Klick-Ertrag,
-      // zählt bewusst nicht in totalClicks/Klick-Achievements (nur echte Klicks).
-      if (next.coreUpgrades.includes("core_automation_autoclicker")) {
-        const autoClickGain = formulas.clickValue(next, kps).times(dtSeconds);
+      // Klick-basierter passiver Ertrag pro Tick: Kern-Auto-Klicker (1×/Sek.)
+      // und der Debug-Auto-Klicker (35×/Sek.) stacken. Beides zählt bewusst
+      // nicht in totalClicks/Klick-Achievements (nur echte Klicks), aber sehr
+      // wohl in clickKnowledge ("durch Klick generiertes Wissen").
+      let clicksPerSecond = 0;
+      if (next.coreUpgrades.includes("core_automation_autoclicker")) clicksPerSecond += 1;
+      if (next.debugAutoClicker) clicksPerSecond += DEBUG_AUTOCLICKER_CPS;
+      if (clicksPerSecond > 0) {
+        const clickGain = formulas.clickValue(next, kps).times(clicksPerSecond).times(dtSeconds);
         next = {
           ...next,
-          knowledge: next.knowledge.plus(autoClickGain),
-          lifetimeKnowledge: next.lifetimeKnowledge.plus(autoClickGain),
-          knowledgeEarnedThisRun: next.knowledgeEarnedThisRun.plus(autoClickGain),
+          knowledge: next.knowledge.plus(clickGain),
+          lifetimeKnowledge: next.lifetimeKnowledge.plus(clickGain),
+          knowledgeEarnedThisRun: next.knowledgeEarnedThisRun.plus(clickGain),
+          clickKnowledge: next.clickKnowledge.plus(clickGain),
         };
       }
+
+      next = { ...next, peakKnowledge: decimalMax(next.peakKnowledge, next.knowledge) };
 
       const activeEvents = next.activeEvents.filter((e) => e.expiresAt > newPlaytime);
       if (activeEvents.length !== next.activeEvents.length) next = { ...next, activeEvents };

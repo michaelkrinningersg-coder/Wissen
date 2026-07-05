@@ -23,6 +23,7 @@ import {
   PRESTIGE_CORE_DIVISOR,
   PRESTIGE_MIN_KNOWLEDGE_BASE,
   PRESTIGE_MIN_KNOWLEDGE_GROWTH,
+  HOEHLEN_CLICK_UPGRADES,
   RARITY_TABLE,
   SYNERGY_FACTOR,
   WISSENSQUELLEN_UPGRADES,
@@ -328,11 +329,37 @@ export function wissensquellenUpgradeClickPercent(player: Player): number {
   return bonus;
 }
 
+/** Multiplikativer Faktor aus den GEKAUFTEN Höhlenzeichnungen-Klick-Upgrades
+ * (je gekauftem Upgrade sein `clickMultiplier`, alle stacken multiplikativ). */
+export function hoehlenClickUpgradeMultiplier(player: Player): number {
+  let multiplier = 1;
+  for (const upgrade of HOEHLEN_CLICK_UPGRADES) {
+    if (player.purchasedWqUpgrades.includes(upgrade.id)) multiplier *= upgrade.clickMultiplier;
+  }
+  return multiplier;
+}
+
 export function clickValue(player: Player, kps: Decimal): Decimal {
-  const base = baseClickValue(player).times(1 + clickUpgradeBonus(player));
+  const base = baseClickValue(player)
+    .times(1 + clickUpgradeBonus(player))
+    .times(hoehlenClickUpgradeMultiplier(player));
   const wqBonus = kps.times(wissensquellenUpgradeClickPercent(player));
   const buffMultiplier = player.activeCardBuffMultiplier > 0 ? player.activeCardBuffMultiplier : 1;
   return base.plus(wqBonus).times(clickEventMultiplier(player)).times(buffMultiplier);
+}
+
+/** Ist ein Höhlenzeichnungen-Klick-Upgrade freigeschaltet (= kaufbar, Bedingung
+ * erfüllt)? `clickValue`-Bedingungen werden gegen den aktuellen Wissen/Klick
+ * (ohne temporären Karten-Buff) geprüft. */
+export function isHoehlenUpgradeUnlocked(
+  upgrade: (typeof HOEHLEN_CLICK_UPGRADES)[number],
+  player: Player,
+  kps: Decimal,
+): boolean {
+  if (upgrade.unlock.kind === "clickKnowledge") {
+    return player.clickKnowledge.gte(upgrade.unlock.amount);
+  }
+  return clickValue(player, kps).gte(upgrade.unlock.amount);
 }
 
 // ---------------------------------------------------------------------------

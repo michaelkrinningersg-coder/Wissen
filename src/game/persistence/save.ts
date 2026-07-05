@@ -9,6 +9,9 @@ export interface PlayerSave {
   knowledge: string;
   lifetimeKnowledge: string;
   knowledgeEarnedThisRun: string;
+  clickKnowledge: string;
+  peakKnowledge: string;
+  purchasedWqUpgrades: string[];
   epochenLevel: number;
   intelligenceCores: string;
   coreUpgrades: string[];
@@ -43,6 +46,9 @@ export function toSaveShape(player: Player): PlayerSave {
     knowledge: player.knowledge.toString(),
     lifetimeKnowledge: player.lifetimeKnowledge.toString(),
     knowledgeEarnedThisRun: player.knowledgeEarnedThisRun.toString(),
+    clickKnowledge: player.clickKnowledge.toString(),
+    peakKnowledge: player.peakKnowledge.toString(),
+    purchasedWqUpgrades: player.purchasedWqUpgrades,
     epochenLevel: player.epochenLevel,
     intelligenceCores: player.intelligenceCores.toString(),
     coreUpgrades: player.coreUpgrades,
@@ -79,6 +85,9 @@ export function fromSaveShape(raw: unknown): Player {
     knowledge: Decimal.fromValue(save.knowledge),
     lifetimeKnowledge: Decimal.fromValue(save.lifetimeKnowledge),
     knowledgeEarnedThisRun: Decimal.fromValue(save.knowledgeEarnedThisRun),
+    clickKnowledge: Decimal.fromValue(save.clickKnowledge),
+    peakKnowledge: Decimal.fromValue(save.peakKnowledge),
+    purchasedWqUpgrades: save.purchasedWqUpgrades,
     epochenLevel: save.epochenLevel,
     intelligenceCores: Decimal.fromValue(save.intelligenceCores),
     coreUpgrades: save.coreUpgrades,

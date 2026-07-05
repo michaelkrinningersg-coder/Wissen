@@ -28,6 +28,10 @@ export const BUILDING_PRODUCTION_TO_COST_RATIO = 0.0005;
 export const CLICK_BASE_VALUE = 0.1;
 export const HOEHLENZEICHNUNGEN_CLICK_BONUS_PER_UNIT = 0.1;
 
+// Debug-Auto-Klicker: simuliert diese Anzahl echter Klicks/Sek. (nur zum
+// Testen, wird später wieder entfernt).
+export const DEBUG_AUTOCLICKER_CPS = 35;
+
 // Prestige / Epochen
 export const EPOCH_BONUS_BASE = 5;
 export const PRESTIGE_CORE_DIVISOR = 1e6;
@@ -76,6 +80,45 @@ export const WISSENSQUELLEN_UPGRADES: WissensquellenUpgradeDef[] = [
     icon: "💡",
     unlockAtLifetimeKnowledge: 1e9,
     wpsToClickPercent: 0.01,
+  },
+];
+
+/** Kaufbare Wissensquellen-Upgrades für Höhlenzeichnungen (Klick-Wissensquelle).
+ * Anders als WISSENSQUELLEN_UPGRADES (auto-freischaltend) müssen diese aktiv
+ * für Wissen gekauft werden und multiplizieren danach dauerhaft den Wissen/Klick.
+ *
+ * Freischalt-Bedingung (`unlock`) macht das Upgrade KAUFBAR:
+ *  - kind "clickKnowledge": mind. so viel insgesamt durch Klicken generiertes Wissen
+ *  - kind "clickValue":     der aktuelle Wissen/Klick-Wert erreicht die Schwelle
+ * Sichtbar wird das Upgrade separat schon ab peakKnowledge >= Kosten/10 (UI).
+ */
+export interface HoehlenUpgradeDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost: number; // Wissen-Kosten
+  clickMultiplier: number; // multiplikativer Faktor auf Wissen/Klick nach Kauf
+  unlock: { kind: "clickKnowledge"; amount: number } | { kind: "clickValue"; amount: number };
+}
+export const HOEHLEN_CLICK_UPGRADES: HoehlenUpgradeDef[] = [
+  {
+    id: "hoehlen_click_x2_1",
+    name: "Feinere Pigmente",
+    description: "Verdoppelt das Wissen pro Klick (×2).",
+    icon: "🖌️",
+    cost: 500,
+    clickMultiplier: 2,
+    unlock: { kind: "clickKnowledge", amount: 100 },
+  },
+  {
+    id: "hoehlen_click_x2_2",
+    name: "Rituelle Wandmalereien",
+    description: "Verdoppelt das Wissen pro Klick erneut (×2).",
+    icon: "🗿",
+    cost: 10000,
+    clickMultiplier: 2,
+    unlock: { kind: "clickValue", amount: 1000 },
   },
 ];
 

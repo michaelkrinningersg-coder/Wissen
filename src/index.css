@@ -287,6 +287,58 @@ button {
   flex-shrink: 0;
 }
 
+.wq-upgrade-buy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.1s, opacity 0.1s;
+}
+
+.wq-upgrade-buy:hover:not(:disabled) {
+  border-color: var(--good);
+}
+
+.wq-upgrade-buy:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.wq-upgrade-buy.purchased {
+  border-color: var(--good);
+  opacity: 0.8;
+}
+
+.debug-autoclicker-toggle {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--bg-card);
+  color: inherit;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.debug-autoclicker-toggle.active {
+  border-style: solid;
+  border-color: var(--good);
+  color: var(--good);
+  opacity: 1;
+}
+
 .section-title {
   font-size: 1rem;
   font-weight: 700;

@@ -94,8 +94,10 @@ function App() {
             player={player}
             onClick={() => withRefresh(actions.click)}
             onBuy={(id) => withRefresh(() => actions.buyBuilding(id, 1))}
+            onPurchaseWqUpgrade={(id) => withRefresh(() => actions.purchaseHoehlenUpgrade(id))}
             onUnlockCombo={(id) => withRefresh(() => actions.unlockComboBuilding(id))}
             onPrestige={() => withRefresh(actions.prestige)}
+            onToggleDebugAutoClicker={() => withRefresh(actions.toggleDebugAutoClicker)}
           />
         )}
         {tab === "prestige" && (
